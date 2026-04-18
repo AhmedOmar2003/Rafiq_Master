@@ -1,0 +1,314 @@
+/* settings.module.css */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: box-shadow 0.2s;
+}
+
+.card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+
+.cardFull { grid-column: span 2; }
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.cardIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-black);
+}
+
+.cardSub {
+  font-size: 0.78rem;
+  color: var(--color-gray);
+  margin-top: 0.15rem;
+}
+
+/* ── Info Grid ── */
+.infoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  gap: 1rem;
+}
+
+.infoLabel {
+  font-size: 0.82rem;
+  color: var(--color-gray);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.infoVal {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-black);
+  text-align: left;
+}
+
+/* ── DB Stats ── */
+.dbStats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dbStatItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 100px;
+  padding: 0.9rem 1rem;
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+}
+
+.dbStatIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dbStatVal {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--color-black);
+  line-height: 1;
+}
+
+.dbStatLabel {
+  font-size: 0.75rem;
+  color: var(--color-gray);
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+/* ── Profile ── */
+.profileSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+}
+
+.profileAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #681F00, #8E3006);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(104,31,0,0.3);
+}
+
+.profileName {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--color-black);
+}
+
+.profileRole {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  font-weight: 700;
+  margin-top: 0.2rem;
+}
+
+/* ── Permissions ── */
+.permList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.permItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  color: var(--color-black);
+  font-weight: 600;
+}
+
+.permCheck {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-success-alpha);
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+/* ── Notifications ── */
+.notifGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notifRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  gap: 1rem;
+}
+
+.notifLabel {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-black);
+}
+
+/* Toggle */
+.toggle {
+  width: 40px;
+  height: 22px;
+  background: var(--color-gray-lighter);
+  border-radius: var(--radius-pill);
+  position: relative;
+  transition: background 0.25s;
+  flex-shrink: 0;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.toggleOn { background: var(--color-primary); }
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.toggleOn .toggleThumb { transform: translateX(-18px); }
+
+.comingSoon {
+  font-size: 0.8rem;
+  color: var(--color-gray);
+  font-weight: 600;
+  text-align: center;
+  padding: 0.5rem;
+  background: var(--color-background-alt);
+  border-radius: var(--radius-sm);
+}
+
+/* ── About ── */
+.aboutBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(104,31,0,0.06), rgba(142,48,6,0.03));
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(104,31,0,0.10);
+}
+
+.aboutLogo {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #681F00, #8E3006);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(104,31,0,0.3);
+}
+
+.aboutTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.aboutSub {
+  font-size: 0.85rem;
+  color: var(--color-gray);
+  margin-top: 0.35rem;
+  line-height: 1.6;
+  max-width: 540px;
+}
+
+.aboutTags {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  .cardFull { grid-column: span 1; }
+  .dbStats { flex-direction: column; }
+}

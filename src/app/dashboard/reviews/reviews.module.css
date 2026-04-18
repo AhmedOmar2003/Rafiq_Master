@@ -1,0 +1,43 @@
+/* reviews.module.css */
+.placeName {
+  font-weight: 700;
+  color: var(--color-black);
+}
+
+.deleted {
+  color: var(--color-gray);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.userName {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--color-black);
+}
+
+.reviewText {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.85rem;
+  color: var(--color-gray);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.dateCell {
+  font-size: 0.8rem;
+  color: var(--color-gray);
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: right !important;
+}
+
+.ratingNum {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-gray);
+  margin-right: 0.2rem;
+}

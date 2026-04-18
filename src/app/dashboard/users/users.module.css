@@ -1,0 +1,14 @@
+/* users.module.css */
+.emailCell {
+  font-size: 0.82rem;
+  color: var(--color-gray);
+  text-align: right !important;
+}
+
+.dateCell {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-gray);
+  text-align: right !important;
+  white-space: nowrap;
+}
