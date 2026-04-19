@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
-import { Plus, MapPin, Star } from "lucide-react";
+import { Plus, MapPin, Star, Trophy } from "lucide-react";
 import s from "../shared.module.css";
 import PlacesFilters from "./PlacesFilters";
 import { deletePlace } from "./actions";
@@ -81,7 +81,7 @@ export default async function PlacesPage() {
         </div>
         <div className={s.statCard}>
           <div className={s.statIcon} style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
-            🏆
+            <Trophy size={22} />
           </div>
           <div className={s.statBody}>
             <div className={s.statValue}>{topActivity}</div>
