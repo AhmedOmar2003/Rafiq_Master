@@ -61,21 +61,20 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.7rem 1.3rem;
+  padding: 0.75rem 1.4rem;
   background: linear-gradient(135deg, #681F00, #8E3006);
   color: #fff;
   border-radius: var(--radius-md);
   font-weight: 700;
   font-size: 0.9rem;
   white-space: nowrap;
-  transition: opacity 0.18s, transform 0.18s, box-shadow 0.18s;
-  box-shadow: 0 4px 14px rgba(104, 31, 0, 0.3);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(104, 31, 0, 0.25);
 }
 
 .primaryBtn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(104, 31, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(104, 31, 0, 0.35);
   color: #fff;
 }
 
@@ -93,14 +92,15 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  border: 1px solid rgba(0,0,0,0.04);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  border: 1px solid rgba(0,0,0,0.02);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .statCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.09);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+  border-color: rgba(104, 31, 0, 0.08);
 }
 
 .statIcon {
@@ -254,7 +254,7 @@
   color: var(--color-black);
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color 0.2s, background 0.2s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dropdownTrigger:hover {
@@ -380,9 +380,14 @@
 .tableCard {
   background: var(--color-white);
   border-radius: var(--radius-lg);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
   border: 1px solid rgba(0,0,0,0.04);
   overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.tableCard:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
 }
 
 .table {
@@ -411,10 +416,13 @@
 .table tr:last-child td { border-bottom: none; }
 
 .table tbody tr {
-  transition: background 0.12s;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.table tbody tr:hover { background: var(--color-background); }
+.table tbody tr:hover { 
+  background: var(--color-background); 
+  transform: scale(1.002);
+}
 
 /* ── Avatar ─────────────────────────────────────────── */
 .avatar {

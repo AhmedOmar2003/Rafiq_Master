@@ -22,6 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -113,7 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           )}
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutModal(true)}
             className={styles.logoutButton}
             title={isCollapsed ? "تسجيل الخروج" : undefined}
           >
@@ -177,6 +178,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Page Content */}
         <div className={styles.pageContainer}>{children}</div>
       </main>
+
+      {/* ── Logout Modal ── */}
+      {showLogoutModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIconWrap}>
+                <LogOut size={26} strokeWidth={2.5} />
+              </div>
+              <h3 className={styles.modalTitle}>تسجيل الخروج</h3>
+            </div>
+            <p className={styles.modalBody}>
+              هل أنت متأكد أنك تريد تسجيل الخروج من لوحة تحكم رفيق؟
+            </p>
+            <div className={styles.modalActions}>
+              <button 
+                onClick={() => setShowLogoutModal(false)}
+                className={styles.modalCancelBtn}
+              >
+                إلغاء
+              </button>
+              <button 
+                onClick={handleLogout}
+                className={styles.modalConfirmBtn}
+              >
+                تأكيد الخروج
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
