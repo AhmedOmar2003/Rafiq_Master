@@ -2,6 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Skip auth checks for static Flutter web app files and APK download.
+  if (pathname === "/app-release.apk" || pathname.startsWith("/app/")) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -34,7 +41,7 @@ export async function middleware(request: NextRequest) {
   const hasBypass = request.cookies.get("super_admin_bypass");
   
   // Protect /dashboard routes
-  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+  if (pathname.startsWith("/dashboard")) {
     if (!hasBypass) {
       if (!user) {
         const url = request.nextUrl.clone();
@@ -58,14 +65,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect root to dashboard
-  if (request.nextUrl.pathname === "/") {
+  if (pathname === "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
   // Prevent logged-in users from accessing /login
-  if ((user || hasBypass) && request.nextUrl.pathname === "/login") {
+  if ((user || hasBypass) && pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -76,6 +83,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|js|css|json|map|txt|xml|ico|wasm)$).*)",
   ],
 };
