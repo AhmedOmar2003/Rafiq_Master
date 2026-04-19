@@ -5,6 +5,9 @@ import UsersFilters from "./UsersFilters";
 
 export const metadata = { title: "إدارة المستخدمين - رفيق" };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type AdminRoleRow = { user_id: string; role: "admin" | "super_admin" };
 
 export default async function UsersPage() {

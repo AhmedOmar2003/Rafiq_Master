@@ -6,6 +6,9 @@ import { deleteReview } from "./actions";
 
 export const metadata = { title: "إدارة التقييمات - رفيق" };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type ReviewRow = {
   review_id: number;
   review_text: string;

@@ -7,6 +7,9 @@ import { deletePlace } from "./actions";
 
 export const metadata = { title: "إدارة الأماكن - رفيق" };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type PlaceRow = {
   place_id: number;
   place_name: string;

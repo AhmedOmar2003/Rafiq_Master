@@ -17,6 +17,9 @@ type PlaceRow = {
   city_name: string;
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const CITY_OPTIONS = ["القاهرة", "المنصورة", "الإسكندرية", "طنطا", "أي حتة"];
 const BUDGET_OPTIONS = [
   "أقل من 100 جنيه",
