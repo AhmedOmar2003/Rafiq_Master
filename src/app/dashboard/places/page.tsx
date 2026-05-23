@@ -24,7 +24,11 @@ export default async function PlacesPage() {
   const supabase = createAdminClient();
 
   const [{ data: places }, { count: total }] = await Promise.all([
-    supabase.from("places").select("*").order("created_at", { ascending: false }),
+    supabase
+      .from("places")
+      .select("place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at")
+      .order("created_at", { ascending: false })
+      .limit(250),
     supabase.from("places").select("*", { count: "exact", head: true }),
   ]);
 

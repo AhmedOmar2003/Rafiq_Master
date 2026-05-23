@@ -61,7 +61,7 @@ export default async function DashboardOverview() {
     supabase.auth.admin.listUsers(),
     supabase.from("places").select("*", { count: "exact", head: true }),
     supabase.from("reviews").select("*", { count: "exact", head: true }),
-    supabase.from("reviews").select("rating"),
+    supabase.from("reviews").select("rating").limit(1000),
     supabase
       .from("places")
       .select("place_id, place_name, city_name, activity_name, created_at, rating")
@@ -74,9 +74,9 @@ export default async function DashboardOverview() {
       .order("rating", { ascending: false })
       .limit(5),
     // City distribution
-    supabase.from("places").select("city_name"),
+    supabase.from("places").select("city_name").limit(1000),
     // Activity distribution
-    supabase.from("places").select("activity_name"),
+    supabase.from("places").select("activity_name").limit(1000),
   ]);
 
   const usersCount = authUsers?.users.length ?? 0;

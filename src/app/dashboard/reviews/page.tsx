@@ -29,10 +29,11 @@ export default async function ReviewsPage() {
     await Promise.all([
       supabase
         .from("reviews")
-        .select("*, places(place_name)")
-        .order("created_at", { ascending: false }),
+        .select("review_id,review_text,created_at,rating,name,places(place_name)")
+        .order("created_at", { ascending: false })
+        .limit(250),
       supabase.from("reviews").select("*", { count: "exact", head: true }),
-      supabase.from("reviews").select("rating"),
+      supabase.from("reviews").select("rating").limit(1000),
     ]);
 
   const reviewRows = (reviews ?? []) as ReviewRow[];
