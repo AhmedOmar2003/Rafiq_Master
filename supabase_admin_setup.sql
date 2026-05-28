@@ -13,15 +13,16 @@ CREATE TABLE IF NOT EXISTS public.admin_roles (
 INSERT INTO public.profiles (id, full_name, email)
 SELECT
     id,
-    COALESCE(
+    LEFT(COALESCE(
         NULLIF(raw_user_meta_data->>'full_name', ''),
         NULLIF(raw_user_meta_data->>'name', ''),
         split_part(email, '@', 1)
-    ) AS full_name,
+    ), 80) AS full_name,
     email
 FROM auth.users
-ON CONFLICT (id) DO UPDATE
+ON CONFLICT (email) DO UPDATE
 SET full_name = excluded.full_name,
+    id = excluded.id,
     email = excluded.email,
     updated_at = now();
 
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can read audit_logs" ON public.audit_logs;
 CREATE POLICY "Admins can read audit_logs" ON public.audit_logs
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.admin_roles WHERE user_id = auth.uid())
@@ -59,22 +61,26 @@ CREATE POLICY "Admins can read audit_logs" ON public.audit_logs
 DROP POLICY IF EXISTS "Public write places" ON public.places;
 
 -- Re-add places write policies only for admins
+DROP POLICY IF EXISTS "Admins can insert places" ON public.places;
 CREATE POLICY "Admins can insert places" ON public.places
   FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM public.admin_roles WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Admins can update places" ON public.places;
 CREATE POLICY "Admins can update places" ON public.places
   FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.admin_roles WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Admins can delete places" ON public.places;
 CREATE POLICY "Admins can delete places" ON public.places
   FOR DELETE USING (
     EXISTS (SELECT 1 FROM public.admin_roles WHERE user_id = auth.uid())
   );
 
 -- 4. Admin policies for Reviews (Admins can delete any review)
+DROP POLICY IF EXISTS "Admins can delete any review" ON public.reviews;
 CREATE POLICY "Admins can delete any review" ON public.reviews
   FOR DELETE USING (
     EXISTS (SELECT 1 FROM public.admin_roles WHERE user_id = auth.uid())
