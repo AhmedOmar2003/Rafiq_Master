@@ -1,9 +1,30 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+const LOGIN_EMAIL_LIMIT = 5;
+const LOGIN_IP_LIMIT = 15;
+const LOGIN_WINDOW = "15 minutes";
+
+async function logLoginAttempt(params: {
+  email: string;
+  ip: string | null;
+  userAgent: string | null;
+  succeeded: boolean;
+  reason: string | null;
+}) {
+  const adminSupabase = createAdminClient();
+  await adminSupabase.from("login_attempts").insert({
+    email: params.email,
+    ip_address: params.ip,
+    user_agent: params.userAgent,
+    succeeded: params.succeeded,
+    reason: params.reason,
+  });
+}
 
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
@@ -13,30 +34,42 @@ export async function login(formData: FormData) {
     return { error: "يرجى تعبئة جميع الحقول." };
   }
 
-  const isSuperAdmin = email.toLowerCase() === "admin@admin.com" && password === "admin";
+  const requestHeaders = await headers();
+  const ip =
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    requestHeaders.get("x-real-ip") ??
+    null;
+  const userAgent = requestHeaders.get("user-agent");
+  const emailKey = email.toLowerCase();
 
-  if (isSuperAdmin) {
-    const cookieStore = await cookies();
-    cookieStore.set("super_admin_bypass", "true", { path: "/", httpOnly: true });
-    redirect("/dashboard");
-  }
+  const adminSupabase = createAdminClient();
+  const [emailThrottle, ipThrottle] = await Promise.all([
+    adminSupabase.rpc("consume_rate_limit", {
+      _bucket: "admin_login_email",
+      _key: emailKey,
+      _limit: LOGIN_EMAIL_LIMIT,
+      _window: LOGIN_WINDOW,
+    }),
+    adminSupabase.rpc("consume_rate_limit", {
+      _bucket: "admin_login_ip",
+      _key: ip ?? "unknown",
+      _limit: LOGIN_IP_LIMIT,
+      _window: LOGIN_WINDOW,
+    }),
+  ]);
 
-  const isSuperAdminEmailOnly = email.toLowerCase() === "admin@admin.com";
-
-  if (!isSuperAdminEmailOnly) {
-    if (!email.toLowerCase().endsWith("@gmail.com")) {
-      return { error: "يرجى استخدام بريد إلكتروني ينتهي بـ @gmail.com فقط." };
-    }
-
-    // Strong password validation
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return { error: "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل، حرف كبير، حرف صغير، رقم ورمز." };
-    }
+  if (emailThrottle.error || ipThrottle.error || !emailThrottle.data || !ipThrottle.data) {
+    await logLoginAttempt({
+      email: emailKey,
+      ip,
+      userAgent,
+      succeeded: false,
+      reason: "rate_limited",
+    });
+    return { error: "محاولات الدخول كثيرة جدًا. حاول مرة أخرى لاحقًا." };
   }
 
   const supabase = await createClient();
-  const adminSupabase = createAdminClient();
 
   const { error, data } = await supabase.auth.signInWithPassword({
     email,
@@ -44,6 +77,13 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
+    await logLoginAttempt({
+      email: emailKey,
+      ip,
+      userAgent,
+      succeeded: false,
+      reason: "invalid_credentials",
+    });
     return { error: "البريد الإلكتروني أو كلمة المرور غير صحيحة." };
   }
 
@@ -56,8 +96,23 @@ export async function login(formData: FormData) {
 
   if (roleError || !adminRole) {
     await supabase.auth.signOut();
-    return { error: "عذراً، هذا الحساب لا يملك صلاحيات المشرف." };
+    await logLoginAttempt({
+      email: emailKey,
+      ip,
+      userAgent,
+      succeeded: false,
+      reason: "not_admin",
+    });
+    return { error: "عذراً، هذا الحساب لا يملك صلاحيات الدخول." };
   }
+
+  await logLoginAttempt({
+    email: emailKey,
+    ip,
+    userAgent,
+    succeeded: true,
+    reason: null,
+  });
 
   redirect("/dashboard");
 }

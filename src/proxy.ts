@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Skip auth checks for static Flutter web app files and APK download.
@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({
             request,
           });
@@ -38,29 +38,25 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const hasBypass = request.cookies.get("super_admin_bypass");
-  
   // Protect /dashboard routes
   if (pathname.startsWith("/dashboard")) {
-    if (!hasBypass) {
-      if (!user) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
-        return NextResponse.redirect(url);
-      }
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
 
-      const { data: adminRole } = await supabase
-        .from("admin_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .single();
+    const { data: adminRole } = await supabase
+      .from("admin_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
 
-      if (!adminRole) {
-        // User is authenticated but NOT an admin
-        const url = request.nextUrl.clone();
-        url.pathname = "/unauthorized";
-        return NextResponse.redirect(url);
-      }
+    if (!adminRole) {
+      // User is authenticated but NOT an admin
+      const url = request.nextUrl.clone();
+      url.pathname = "/unauthorized";
+      return NextResponse.redirect(url);
     }
   }
 
@@ -72,7 +68,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Prevent logged-in users from accessing /login
-  if ((user || hasBypass) && pathname === "/login") {
+  if (user && pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

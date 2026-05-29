@@ -5,12 +5,14 @@ import { login } from "./actions";
 import styles from "./page.module.css";
 import { LogIn } from "lucide-react";
 
+type LoginState = {
+  error?: string;
+} | null;
+
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(
-    async (prevState: any, formData: FormData) => {
-      return await login(formData);
-    },
-    null
+  const [state, formAction, isPending] = useActionState<LoginState, FormData>(
+    async (_prevState, formData) => login(formData),
+    null,
   );
 
   return (
@@ -24,7 +26,7 @@ export default function LoginPage() {
         <form action={formAction} className={styles.form}>
           <div className={styles.inputGroup}>
             <label htmlFor="email" className={styles.label}>
-              البريد الإلكتروني (@gmail.com أو Super Admin)
+              البريد الإلكتروني
             </label>
             <input
               type="email"
@@ -32,7 +34,7 @@ export default function LoginPage() {
               name="email"
               required
               className={styles.input}
-              placeholder="admin@admin.com"
+              placeholder="name@example.com"
               dir="ltr"
             />
           </div>
