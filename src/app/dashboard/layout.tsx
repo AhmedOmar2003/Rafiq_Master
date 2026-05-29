@@ -5,17 +5,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, MapPin, Star, Settings, LogOut,
-  Bell, Search, Menu, X, ChevronLeft,
+  Bell, Search, Menu, X, ChevronLeft, Store, CreditCard,
 } from "lucide-react";
 import styles from "./layout.module.css";
 import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
-  { name: "نظرة عامة",  href: "/dashboard",          icon: LayoutDashboard, desc: "الإحصائيات" },
-  { name: "المستخدمون", href: "/dashboard/users",     icon: Users,           desc: "إدارة الحسابات" },
-  { name: "الأماكن",    href: "/dashboard/places",    icon: MapPin,          desc: "إدارة الأماكن" },
-  { name: "التقييمات",  href: "/dashboard/reviews",   icon: Star,            desc: "المراجعات" },
-  { name: "الإعدادات",  href: "/dashboard/settings",  icon: Settings,        desc: "إعدادات التطبيق" },
+  { name: "نظرة عامة",      href: "/dashboard",               icon: LayoutDashboard, desc: "الإحصائيات" },
+  { name: "المستخدمون",     href: "/dashboard/users",         icon: Users,           desc: "إدارة الحسابات" },
+  { name: "مقدّمو الخدمة",  href: "/dashboard/providers",     icon: Store,           desc: "أصحاب الأنشطة" },
+  { name: "الاشتراكات",     href: "/dashboard/subscriptions", icon: CreditCard,      desc: "خطط الباقات والإيراد" },
+  { name: "الأماكن",        href: "/dashboard/places",        icon: MapPin,          desc: "إدارة الأماكن" },
+  { name: "التقييمات",      href: "/dashboard/reviews",       icon: Star,            desc: "المراجعات" },
+  { name: "الإعدادات",      href: "/dashboard/settings",      icon: Settings,        desc: "إعدادات التطبيق" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Users, UserCheck, Shield } from "lucide-react";
+import { Users, UserCheck, Shield, Store } from "lucide-react";
 import s from "../shared.module.css";
 import UsersFilters from "./UsersFilters";
 
@@ -9,13 +9,25 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type AdminRoleRow = { user_id: string; role: "admin" | "super_admin" };
+type UserRoleRow = { user_id: string; role: string; revoked_at: string | null };
 
 export default async function UsersPage() {
   const supabase = createAdminClient();
 
-  const [{ data: authUsers, error }, { data: adminRoles }] = await Promise.all([
+  // Three parallel reads:
+  //   - auth.users      → the canonical account list (email, created_at, metadata)
+  //   - admin_roles     → dashboard moderation roles (admin / super_admin)
+  //   - user_roles      → app-level RBAC. We look up `provider` here so the
+  //                        admin can tell apart paying business owners from
+  //                        consumer accounts at a glance.
+  const [
+    { data: authUsers, error },
+    { data: adminRoles },
+    { data: userRoles },
+  ] = await Promise.all([
     supabase.auth.admin.listUsers(),
     supabase.from("admin_roles").select("user_id, role"),
+    supabase.from("user_roles").select("user_id, role, revoked_at"),
   ]);
 
   if (error) {
@@ -28,8 +40,13 @@ export default async function UsersPage() {
     );
   }
 
-  const roleMap = new Map(
+  const adminMap = new Map(
     ((adminRoles ?? []) as AdminRoleRow[]).map((r) => [r.user_id, r.role])
+  );
+  const providerSet = new Set(
+    ((userRoles ?? []) as UserRoleRow[])
+      .filter((r) => r.role === "provider" && r.revoked_at === null)
+      .map((r) => r.user_id)
   );
 
   const users = (authUsers?.users ?? []).map((u) => ({
@@ -37,11 +54,13 @@ export default async function UsersPage() {
     email: u.email,
     created_at: u.created_at,
     user_metadata: u.user_metadata as { full_name?: string; name?: string },
-    role: roleMap.get(u.id) ?? null,
+    role: adminMap.get(u.id) ?? null,
+    isProvider: providerSet.has(u.id),
   }));
 
   const total = users.length;
   const admins = users.filter((u) => u.role).length;
+  const providers = users.filter((u) => u.isProvider).length;
   const thisMonth = users.filter((u) => {
     const d = new Date(u.created_at);
     const now = new Date();
@@ -81,6 +100,15 @@ export default async function UsersPage() {
           <div className={s.statBody}>
             <div className={s.statValue}>{admins}</div>
             <div className={s.statLabel}>المشرفون</div>
+          </div>
+        </div>
+        <div className={s.statCard}>
+          <div className={s.statIcon} style={{ background: "rgba(59,130,246,0.12)", color: "#2563eb" }}>
+            <Store size={22} />
+          </div>
+          <div className={s.statBody}>
+            <div className={s.statValue}>{providers}</div>
+            <div className={s.statLabel}>مقدّمو الخدمة</div>
           </div>
         </div>
         <div className={s.statCard}>

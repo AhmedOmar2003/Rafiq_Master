@@ -17,6 +17,9 @@ import {
   TreePine,
   Trophy,
   Medal,
+  Store,
+  Crown,
+  Banknote,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -57,6 +60,9 @@ export default async function DashboardOverview() {
     { data: topPlacesData },
     { data: cityStatsData },
     { data: activityStatsData },
+    { count: providersCount },
+    { data: subsData },
+    { data: catalogRows },
   ] = await Promise.all([
     supabase.auth.admin.listUsers(),
     supabase.from("places").select("*", { count: "exact", head: true }),
@@ -77,6 +83,19 @@ export default async function DashboardOverview() {
     supabase.from("places").select("city_name").limit(1000),
     // Activity distribution
     supabase.from("places").select("activity_name").limit(1000),
+    // Providers total
+    supabase.from("providers").select("*", { count: "exact", head: true }),
+    // Active subscriptions for paid-subs KPI + MRR projection
+    supabase
+      .from("provider_subscriptions")
+      .select(
+        "tier, amount_paid_egp, metadata, period_start, period_end, status"
+      )
+      .in("status", ["active", "trialing", "past_due"]),
+    // Catalog for amount imputation on demo rows
+    supabase
+      .from("subscription_plans")
+      .select("tier, price_monthly_egp, price_yearly_egp"),
   ]);
 
   const usersCount = authUsers?.users.length ?? 0;
@@ -129,6 +148,49 @@ export default async function DashboardOverview() {
   };
 
   const totalPlaces = placesCount ?? 0;
+
+  // ── Providers + paid subscriptions + MRR ──────────────────────────────
+  //
+  // The paid-subs KPI excludes Free entries (which never appear in
+  // provider_subscriptions anyway — Free is the absence of a row in the
+  // view). MRR normalizes yearly subs to a monthly equivalent so the figure
+  // stays comparable as the gateway flips between billing cycles.
+  type SubLite = {
+    tier: string;
+    amount_paid_egp: number | null;
+    metadata: Record<string, unknown> | null;
+    period_start: string | null;
+    period_end: string | null;
+  };
+  type CatalogLite = {
+    tier: string;
+    price_monthly_egp: number | null;
+    price_yearly_egp: number | null;
+  };
+  const catalogMap = new Map<string, CatalogLite>();
+  for (const row of (catalogRows ?? []) as CatalogLite[]) {
+    catalogMap.set(row.tier, row);
+  }
+  const subs = (subsData ?? []) as SubLite[];
+  const paidSubsCount = subs.length;
+  const mrr = subs.reduce((acc, sub) => {
+    const start = sub.period_start ? new Date(sub.period_start).getTime() : 0;
+    const end = sub.period_end ? new Date(sub.period_end).getTime() : 0;
+    const yearly =
+      sub.metadata?.yearly === true ||
+      (start > 0 && end > 0 && (end - start) / (1000 * 60 * 60 * 24) > 90);
+    let amount = sub.amount_paid_egp ?? 0;
+    if (amount === 0) {
+      const cat = catalogMap.get(sub.tier);
+      if (cat) {
+        amount = yearly
+          ? cat.price_yearly_egp ?? 0
+          : cat.price_monthly_egp ?? 0;
+      }
+    }
+    return acc + (yearly ? Math.floor(amount / 12) : amount);
+  }, 0);
+  const totalProviders = providersCount ?? 0;
 
   return (
     <div className={styles.page}>
@@ -213,6 +275,56 @@ export default async function DashboardOverview() {
           <div className={styles.statTrend}>
             <Award size={16} />
             <span>إجمالي</span>
+          </div>
+        </div>
+
+        {/* Providers KPI — businesses signed up on the platform */}
+        <div className={`${styles.statCard} ${styles.statCardPrimary}`}>
+          <div className={styles.statCardBg} />
+          <div className={styles.statIconWrap}>
+            <Store size={22} />
+          </div>
+          <div className={styles.statBody}>
+            <span className={styles.statValue}>{totalProviders}</span>
+            <span className={styles.statLabel}>مقدّمو الخدمة</span>
+          </div>
+          <div className={styles.statTrend}>
+            <ArrowUpRight size={16} />
+            <span>أنشطة</span>
+          </div>
+        </div>
+
+        {/* Paid subs KPI — the revenue-driving accounts */}
+        <div className={`${styles.statCard} ${styles.statCardGold}`}>
+          <div className={styles.statCardBg} />
+          <div className={styles.statIconWrap}>
+            <Crown size={22} />
+          </div>
+          <div className={styles.statBody}>
+            <span className={styles.statValue}>{paidSubsCount}</span>
+            <span className={styles.statLabel}>مشتركين مدفوع</span>
+          </div>
+          <div className={styles.statTrend}>
+            <TrendingUp size={16} />
+            <span>Pro / Max</span>
+          </div>
+        </div>
+
+        {/* Projected monthly recurring revenue */}
+        <div className={`${styles.statCard} ${styles.statCardGreen}`}>
+          <div className={styles.statCardBg} />
+          <div className={styles.statIconWrap}>
+            <Banknote size={22} />
+          </div>
+          <div className={styles.statBody}>
+            <span className={styles.statValue}>
+              {mrr.toLocaleString("en-EG")} ج.م
+            </span>
+            <span className={styles.statLabel}>إيراد شهري متوقّع</span>
+          </div>
+          <div className={styles.statTrend}>
+            <ArrowUpRight size={16} />
+            <span>MRR</span>
           </div>
         </div>
       </div>

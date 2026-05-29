@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Search, X, ChevronDown, Users, Shield, User } from "lucide-react";
+import { Search, X, ChevronDown, Users, Shield, User, Store } from "lucide-react";
 import { format } from "date-fns";
 import s from "../shared.module.css";
 import ls from "./users.module.css";
@@ -12,11 +12,13 @@ type UserRow = {
   created_at: string;
   user_metadata?: { full_name?: string; name?: string };
   role?: "admin" | "super_admin" | null;
+  isProvider?: boolean;
 };
 
 const ROLE_OPTIONS = [
   { label: "الكل", value: "all" },
   { label: "مستخدم", value: "user" },
+  { label: "مقدّم خدمة", value: "provider" },
   { label: "مشرف", value: "admin" },
   { label: "مشرف أعلى", value: "super_admin" },
 ];
@@ -76,7 +78,8 @@ export default function UsersFilters({ users }: { users: UserRow[] }) {
         u.email?.toLowerCase().includes(q);
       const matchRole =
         roleFilter === "all" ||
-        (roleFilter === "user" && !u.role) ||
+        (roleFilter === "user" && !u.role && !u.isProvider) ||
+        (roleFilter === "provider" && u.isProvider) ||
         u.role === roleFilter;
       return matchSearch && matchRole;
     });
@@ -96,6 +99,11 @@ export default function UsersFilters({ users }: { users: UserRow[] }) {
       return { label: "مشرف", cls: `${s.badge} ${s.badgeGold}` };
     return { label: "مستخدم", cls: `${s.badge} ${s.badgeGray}` };
   }
+
+  // Provider is an *orthogonal* role — a user can be a provider AND a moderator.
+  // We render it as a separate chip next to the moderation badge so the admin
+  // sees both facts without one masking the other.
+  const providerChipCls = `${s.badge} ${s.badgePurple}`;
 
   const roleLabel =
     ROLE_OPTIONS.find((o) => o.value === roleFilter)?.label || "الدور";
@@ -216,12 +224,20 @@ export default function UsersFilters({ users }: { users: UserRow[] }) {
                       {format(new Date(user.created_at), "dd/MM/yyyy")}
                     </td>
                     <td>
-                      <span className={roleInfo.cls}>
-                        {roleInfo.label === "مشرف أعلى" && <Shield size={11} />}
-                        {roleInfo.label === "مشرف" && <Shield size={11} />}
-                        {roleInfo.label === "مستخدم" && <User size={11} />}
-                        {roleInfo.label}
-                      </span>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                        <span className={roleInfo.cls}>
+                          {roleInfo.label === "مشرف أعلى" && <Shield size={11} />}
+                          {roleInfo.label === "مشرف" && <Shield size={11} />}
+                          {roleInfo.label === "مستخدم" && <User size={11} />}
+                          {roleInfo.label}
+                        </span>
+                        {user.isProvider && (
+                          <span className={providerChipCls}>
+                            <Store size={11} />
+                            مقدّم خدمة
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
