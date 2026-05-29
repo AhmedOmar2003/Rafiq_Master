@@ -4,14 +4,14 @@
   align-items: center;
   justify-content: center;
   background-color: var(--color-background);
-  padding: 1rem;
+  padding: var(--space-md);
 }
 
 .card {
-  background-color: var(--color-white);
-  padding: 2.5rem 2rem;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  background-color: var(--color-surface);
+  padding: var(--space-2xl) var(--space-xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-dropdown);
   width: 100%;
   max-width: 420px;
   text-align: center;
@@ -21,77 +21,27 @@
   color: var(--color-primary);
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-xs);
 }
 
 .subtitle {
-  color: var(--color-gray);
+  color: var(--color-text-secondary);
   font-size: 0.95rem;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-xl);
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-}
-
-.inputGroup {
-  display: flex;
-  flex-direction: column;
-  text-align: right;
-  gap: 0.5rem;
-}
-
-.label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-black);
-}
-
-.input {
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 1px solid var(--color-gray-light);
-  border-radius: var(--radius-md);
-  outline: none;
-  transition: border-color var(--transition-fast);
-  background-color: var(--color-white);
-  color: var(--color-black);
-}
-
-.input:focus {
-  border-color: var(--color-primary);
-}
-
-.button {
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  padding: 0.8rem 1rem;
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  font-size: 1rem;
-  margin-top: 0.5rem;
-  transition: background-color var(--transition-fast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.button:hover:not(:disabled) {
-  background-color: var(--color-primary-light);
-}
-
-.button:disabled {
-  background-color: var(--color-gray-light);
-  cursor: not-allowed;
+  gap: var(--space-md);
 }
 
 .error {
-  color: var(--color-danger);
-  background-color: var(--color-danger-alpha);
-  padding: 0.75rem;
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+  padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
   font-size: 0.9rem;
   text-align: right;
+  margin-bottom: var(--space-md);
 }

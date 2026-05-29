@@ -38,12 +38,12 @@
 .title {
   font-size: 2rem;
   font-weight: 800;
-  color: var(--color-black);
+  color: var(--color-text-primary);
   line-height: 1.2;
 }
 
 .subtitle {
-  color: var(--color-gray);
+  color: var(--color-text-secondary);
   font-size: 0.95rem;
 }
 
@@ -58,9 +58,9 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: var(--color-white);
-  border: 1px solid var(--color-gray-lighter);
-  color: var(--color-gray);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
   font-size: 0.82rem;
   font-weight: 600;
   padding: 0.55rem 1rem;
@@ -162,11 +162,11 @@
 
 /* ── Card Base ── */
 .card {
-  background: var(--color-white);
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -174,7 +174,7 @@
 }
 
 .card:hover {
-  box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+  box-shadow: var(--shadow-md);
 }
 
 .cardHeader {

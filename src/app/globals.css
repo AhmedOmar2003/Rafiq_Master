@@ -1,40 +1,88 @@
 :root {
-  /* Branding Colors based on the required palette */
-  --color-primary: #681F00;
-  --color-primary-light: #8E3006;
-  --color-primary-dark: #411300;
-  --color-primary-alpha: rgba(104, 31, 0, 0.1);
-  --color-primary-alpha-strong: rgba(104, 31, 0, 0.2);
+  /* =========================================
+     DESIGN TOKENS - UNIFIED RAFIQ SYSTEM
+     ========================================= */
 
-  --color-background: #F7F3DA;
-  --color-background-alt: #EBE6C9;
+  /* 1. Primitives (Do not use directly in UI, use Semantic Tokens) */
+  --coffee-50: #F4EBE6;
+  --coffee-100: #E3D0C6;
+  --coffee-200: #CBA898;
+  --coffee-300: #B07B65;
+  --coffee-400: #935338;
+  --coffee-500: #76361C;
+  --coffee-600: #681F00; /* Primary Brand Color */
+  --coffee-700: #551900;
+  --coffee-800: #421300;
+  --coffee-900: #300E00;
 
-  --color-black: #14171F;
-  --color-white: #FFFFFF;
-  --color-gray: #707070;
-  --color-gray-light: #D1D5DB;
-  --color-gray-lighter: #F3F4F6;
+  --sand-50: #FCFBF8;
+  --sand-100: #F9F6ED;
+  --sand-200: #EBE6C9;
+  --sand-300: #DFD5AB;
   
-  --color-danger: #ef4444;
-  --color-danger-alpha: rgba(239, 68, 68, 0.1);
-  --color-success: #10b981;
-  --color-success-alpha: rgba(16, 185, 129, 0.1);
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
 
-  /* Shadows for a premium feel */
+  /* 2. Semantic Tokens (Use these!) */
+  
+  /* Brand */
+  --color-primary: var(--coffee-600);
+  --color-primary-hover: var(--coffee-700);
+  --color-primary-active: var(--coffee-800);
+  --color-primary-subtle: var(--coffee-50);
+  --color-on-primary: #FFFFFF;
+
+  /* Backgrounds & Surfaces */
+  --color-background: var(--sand-100);
+  --color-surface: #FFFFFF;
+  --color-surface-hover: var(--gray-50);
+  --color-surface-disabled: var(--gray-100);
+
+  /* Borders */
+  --color-border: var(--gray-200);
+  --color-border-hover: var(--gray-300);
+  --color-border-focus: var(--color-primary);
+
+  /* Text */
+  --color-text-primary: var(--gray-900);
+  --color-text-secondary: var(--gray-800); /* Darker gray for better contrast */
+  --color-text-tertiary: #6B7280;
+  --color-text-disabled: #9CA3AF;
+
+  /* Status */
+  --color-error: #DC2626;
+  --color-error-bg: #FEF2F2;
+  --color-success: #16A34A;
+  --color-success-bg: #F0FDF4;
+  --color-warning: #D97706;
+  --color-warning-bg: #FFFBEB;
+
+  /* 3. Metrics (Radii, Spacing, Shadows) */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-  --shadow-card: 0px 4px 20px rgba(0, 0, 0, 0.03);
+  --shadow-card: 0px 8px 24px rgba(0, 0, 0, 0.04);
+  --shadow-dropdown: 0px 12px 32px rgba(0, 0, 0, 0.08);
 
-  /* Radii */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-pill: 9999px;
-
-  /* Transitions */
-  --transition-fast: 150ms ease-in-out;
-  --transition-normal: 250ms ease-in-out;
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html {
@@ -52,11 +100,11 @@ body {
   display: flex;
   flex-direction: column;
   background-color: var(--color-background);
-  color: var(--color-black);
-  font-family: var(--font-cairo), sans-serif;
+  color: var(--color-text-primary);
+  font-family: var(--font-cairo), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 * {
@@ -66,13 +114,13 @@ body {
 }
 
 a {
-  color: inherit;
+  color: var(--color-primary);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 a:hover {
-  color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 button {
@@ -80,16 +128,22 @@ button {
   cursor: pointer;
   border: none;
   background: none;
+  outline: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 input, textarea, select {
   font-family: inherit;
+  outline: none;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling for premium feel */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -97,18 +151,19 @@ input, textarea, select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-gray-light);
+  background: var(--color-border-hover);
   border-radius: var(--radius-pill);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray);
+  background: var(--color-text-tertiary);
 }
 
-/* Utilities */
+/* Base utilities */
 .text-primary { color: var(--color-primary); }
-.text-gray { color: var(--color-gray); }
-.bg-white { background-color: var(--color-white); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-error { color: var(--color-error); }
+.bg-surface { background-color: var(--color-surface); }
 .radius-md { border-radius: var(--radius-md); }
 .radius-lg { border-radius: var(--radius-lg); }
 .shadow-card { box-shadow: var(--shadow-card); }

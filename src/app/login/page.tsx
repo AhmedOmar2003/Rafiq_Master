@@ -3,7 +3,8 @@
 import { useActionState } from "react";
 import { login } from "./actions";
 import styles from "./page.module.css";
-import { LogIn } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 type LoginState = {
   error?: string;
@@ -24,44 +25,29 @@ export default function LoginPage() {
         {state?.error && <div className={styles.error}>{state.error}</div>}
 
         <form action={formAction} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label htmlFor="email" className={styles.label}>
-              البريد الإلكتروني
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              className={styles.input}
-              placeholder="name@example.com"
-              dir="ltr"
-            />
-          </div>
+          <Input
+            label="البريد الإلكتروني"
+            type="email"
+            id="email"
+            name="email"
+            required
+            placeholder="name@example.com"
+            dir="ltr"
+          />
 
-          <div className={styles.inputGroup}>
-            <label htmlFor="password" className={styles.label}>
-              كلمة المرور
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              required
-              className={styles.input}
-              placeholder="••••"
-              dir="ltr"
-            />
-          </div>
+          <Input
+            label="كلمة المرور"
+            type="password"
+            id="password"
+            name="password"
+            required
+            placeholder="••••"
+            dir="ltr"
+          />
 
-          <button type="submit" className={styles.button} disabled={isPending}>
-            {isPending ? "جاري الدخول..." : (
-              <>
-                <LogIn size={18} style={{ marginLeft: "8px" }} />
-                دخول
-              </>
-            )}
-          </button>
+          <Button type="submit" fullWidth isLoading={isPending}>
+            {isPending ? "جاري الدخول..." : "دخول"}
+          </Button>
         </form>
       </div>
     </div>
