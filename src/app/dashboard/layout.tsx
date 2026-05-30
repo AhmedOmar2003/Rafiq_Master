@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, MapPin, Star, Settings, LogOut,
-  Bell, Search, Menu, X, ChevronLeft, Store, CreditCard,
+  Bell, Search, Menu, X, ChevronLeft, Store, CreditCard, Gavel,
 } from "lucide-react";
 import styles from "./layout.module.css";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +16,7 @@ const navItems = [
   { name: "مقدّمو الخدمة",  href: "/dashboard/providers",     icon: Store,           desc: "أصحاب الأنشطة" },
   { name: "الاشتراكات",     href: "/dashboard/subscriptions", icon: CreditCard,      desc: "خطط الباقات والإيراد" },
   { name: "الأماكن",        href: "/dashboard/places",        icon: MapPin,          desc: "إدارة الأماكن" },
+  { name: "الطعون",         href: "/dashboard/appeals",       icon: Gavel,           desc: "اعتراضات مقدّمي الخدمة" },
   { name: "التقييمات",      href: "/dashboard/reviews",       icon: Star,            desc: "المراجعات" },
   { name: "الإعدادات",      href: "/dashboard/settings",      icon: Settings,        desc: "إعدادات التطبيق" },
 ];
