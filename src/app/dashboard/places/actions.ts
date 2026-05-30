@@ -99,7 +99,7 @@ export async function setPlaceStatus(
   // Migration 0030 relaxes the moderation trigger for service_role, so the
   // admin dashboard can update the row directly and let the DB fire the
   // moderation history trigger as usual.
-  const { data: existingPlace, error: fetchError } = await supabase
+  const { data: existingPlaceRaw, error: fetchError } = await supabase
     .from("places")
     .select("approved_at,suspended_at")
     .eq("place_id", placeId)
@@ -108,6 +108,11 @@ export async function setPlaceStatus(
   if (fetchError) {
     throw new Error(`تعذر جلب بيانات المكان: ${fetchError.message}`);
   }
+
+  const existingPlace = existingPlaceRaw as {
+    approved_at: string | null;
+    suspended_at: string | null;
+  };
 
   const { error } = await supabase
     .from("places")
