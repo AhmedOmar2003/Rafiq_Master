@@ -31,4 +31,5 @@ export async function setAppealStatus(
     throw new Error(`فشل تحديث الطعن: ${error.message}`);
   }
   revalidatePath("/dashboard/appeals");
+  revalidatePath("/dashboard/places");
 }
