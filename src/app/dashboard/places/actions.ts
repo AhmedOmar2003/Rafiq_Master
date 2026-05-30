@@ -96,26 +96,37 @@ export async function setPlaceStatus(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  // The places guard trigger blocks direct writes to moderation columns.
-  // We go through the SECURITY DEFINER RPC from migration 0029 so the DB
-  // itself applies the change and emits the moderation_history row.
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ error: { message: string; code?: string } | null }>;
+  // Migration 0030 relaxes the moderation trigger for service_role, so the
+  // admin dashboard can update the row directly and let the DB fire the
+  // moderation history trigger as usual.
+  const { data: existingPlace, error: fetchError } = await supabase
+    .from("places")
+    .select("approved_at,suspended_at")
+    .eq("place_id", placeId)
+    .single();
 
-  const { error } = await rpc("admin_set_place_status", {
-    _place_id: placeId,
-    _status: status,
-    _rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
-  });
+  if (fetchError) {
+    throw new Error(`تعذر جلب بيانات المكان: ${fetchError.message}`);
+  }
+
+  const { error } = await supabase
+    .from("places")
+    .update({
+      status,
+      rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
+      approved_at:
+        status === "approved"
+          ? new Date().toISOString()
+          : existingPlace.approved_at,
+      suspended_at:
+        status === "suspended"
+          ? new Date().toISOString()
+          : existingPlace.suspended_at,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq("place_id", placeId);
 
   if (error) {
-    if (error.code === "42883") {
-      throw new Error(
-        "تعذر تعديل الحالة: دالة admin_set_place_status غير موجودة في قاعدة البيانات بعد. طبّق migration 0029_admin_set_place_status_rpc.sql أولًا.",
-      );
-    }
     throw new Error(`فشل تحديث الحالة: ${error.message}`);
   }
   revalidatePath("/dashboard/places");
