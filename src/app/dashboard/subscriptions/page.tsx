@@ -31,7 +31,12 @@ type CatalogRow = {
   price_yearly_egp: number | null;
 };
 
-type ProviderRow = { id: string; business_name: string | null };
+type ProviderRow = {
+  id: string;
+  business_name: string | null;
+  contact_email: string | null;
+  owner_id: string | null;
+};
 
 /**
  * Revenue / billing console.
@@ -63,7 +68,9 @@ export default async function SubscriptionsPage() {
     supabase
       .from("subscription_plans")
       .select("tier, price_monthly_egp, price_yearly_egp"),
-    supabase.from("providers").select("id, business_name"),
+    supabase
+      .from("providers")
+      .select("id, business_name, contact_email, owner_id"),
   ]);
 
   if (error) {
@@ -80,9 +87,15 @@ export default async function SubscriptionsPage() {
   for (const row of (catalogData ?? []) as CatalogRow[]) {
     catalog.set(row.tier, row);
   }
-  const providerName = new Map<string, string>();
+  const providerInfo = new Map<
+    string,
+    { name: string; email: string | null }
+  >();
   for (const row of (providersData ?? []) as ProviderRow[]) {
-    providerName.set(row.id, row.business_name ?? "—");
+    providerInfo.set(row.id, {
+      name: row.business_name ?? "—",
+      email: row.contact_email,
+    });
   }
 
   const subscriptions: SubscriptionRow[] = (
@@ -107,10 +120,12 @@ export default async function SubscriptionsPage() {
       }
     }
 
+    const info = providerInfo.get(sub.provider_id);
     return {
       id: sub.id,
       providerId: sub.provider_id,
-      providerName: providerName.get(sub.provider_id) ?? "—",
+      providerName: info?.name ?? "—",
+      providerEmail: info?.email ?? null,
       tier: (sub.tier ?? "free") as SubscriptionRow["tier"],
       status: sub.status,
       gateway: sub.gateway,

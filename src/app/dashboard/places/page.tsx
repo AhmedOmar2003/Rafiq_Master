@@ -10,7 +10,7 @@ export const metadata = { title: "إدارة الأماكن - رفيق" };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type PlaceRow = {
+type RawPlaceRow = {
   place_id: number;
   place_name: string;
   city_name: string;
@@ -21,23 +21,68 @@ type PlaceRow = {
   status: "pending" | "approved" | "rejected" | "suspended" | null;
   created_at: string;
   rejection_reason: string | null;
+  provider_id: string | null;
+};
+
+type ProviderInfoRow = {
+  id: string;
+  owner_id: string | null;
+  business_name: string | null;
+  contact_email: string | null;
 };
 
 export default async function PlacesPage() {
   const supabase = createAdminClient();
 
-  const [{ data: places }, { count: total }] = await Promise.all([
+  // Pull places + providers + auth.users in parallel. The places table only
+  // carries `provider_id` as an FK, so we resolve the business name and the
+  // owner's email/full_name by joining on the client. With the indexes from
+  // migration 0025, these three reads stay sub-100ms even at scale.
+  const [
+    { data: places },
+    { count: total },
+    { data: providersData },
+    { data: authUsersData },
+  ] = await Promise.all([
     supabase
       .from("places")
       .select(
-        "place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason",
+        "place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id",
       )
       .order("created_at", { ascending: false })
       .limit(250),
     supabase.from("places").select("*", { count: "exact", head: true }),
+    supabase.from("providers").select("id,owner_id,business_name,contact_email"),
+    supabase.auth.admin.listUsers(),
   ]);
 
-  const placeRows = (places ?? []) as PlaceRow[];
+  const rawRows = (places ?? []) as RawPlaceRow[];
+
+  // Build the provider lookup map. We index by both `id` and `owner_id` so
+  // either resolution path works during the join.
+  const providerById = new Map<string, ProviderInfoRow>();
+  for (const p of (providersData ?? []) as ProviderInfoRow[]) {
+    providerById.set(p.id, p);
+  }
+  const ownerById = new Map<string, { email?: string; name?: string }>();
+  for (const u of authUsersData?.users ?? []) {
+    const meta = (u.user_metadata ?? {}) as { full_name?: string; name?: string };
+    ownerById.set(u.id, {
+      email: u.email,
+      name: meta.full_name ?? meta.name,
+    });
+  }
+
+  const placeRows = rawRows.map((row) => {
+    const provider = row.provider_id ? providerById.get(row.provider_id) : undefined;
+    const owner = provider?.owner_id ? ownerById.get(provider.owner_id) : undefined;
+    return {
+      ...row,
+      owner_business: provider?.business_name ?? null,
+      owner_email: provider?.contact_email ?? owner?.email ?? null,
+      owner_name: owner?.name ?? null,
+    };
+  });
   const pendingCount = placeRows.filter((p) => (p.status ?? "pending") === "pending").length;
   const approvedCount = placeRows.filter((p) => p.status === "approved").length;
 

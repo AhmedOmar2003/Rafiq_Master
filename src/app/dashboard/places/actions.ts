@@ -18,6 +18,12 @@ export async function createPlace(formData: FormData) {
     image_path: formData.get("image_path") as string,
     activity_name: formData.get("activity_name") as string,
     city_name: formData.get("city_name") as string,
+    // Admin-added places are trusted by definition — the admin IS the
+    // moderator, so they go live immediately. Provider-submitted places
+    // from the mobile app still default to 'pending' (no patch here) and
+    // ride through the normal review queue.
+    status: "approved",
+    approved_at: new Date().toISOString(),
   };
 
   const { error } = await supabase.from("places").insert(rawData as never);
@@ -90,18 +96,25 @@ export async function setPlaceStatus(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  const patch: Record<string, unknown> = {
-    status,
-    rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
-    approved_at: status === "approved" ? new Date().toISOString() : null,
-    suspended_at: status === "suspended" ? new Date().toISOString() : null,
-    updated_at: new Date().toISOString(),
-  };
+  // The places guard trigger (migration 0010) blocks status writes unless
+  // `auth.uid()` resolves to a moderator. The dashboard hits Postgres with
+  // the service_role key (no JWT), so a direct UPDATE would raise
+  // "only moderators can change moderation columns". The dedicated SECURITY
+  // DEFINER RPC in migration 0029 sidesteps the trigger cleanly and writes
+  // the matching moderation_history audit row.
+  // Supabase's generated types don't include this RPC yet, so we widen the
+  // client to skip the args-shape check. The runtime signature is enforced
+  // by the SECURITY DEFINER function on the DB side.
+  const rpc = supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ error: { message: string } | null }>;
+  const { error } = await rpc("admin_set_place_status", {
+    _place_id: placeId,
+    _status: status,
+    _rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
+  });
 
-  const placesTable = supabase.from("places") as ReturnType<
-    ReturnType<typeof createAdminClient>["from"]
-  >;
-  const { error } = await placesTable.update(patch).eq("place_id", placeId);
   if (error) {
     throw new Error(error.message);
   }

@@ -19,6 +19,7 @@ export type SubscriptionRow = {
   id: string;
   providerId: string;
   providerName: string;
+  providerEmail: string | null;
   tier: "free" | "pro" | "max";
   status: string;
   gateway: string;
@@ -73,7 +74,10 @@ export default function SubscriptionsFilters({
       if (cycle === "yearly" && !sub.yearly) return false;
       if (cycle === "monthly" && sub.yearly) return false;
       if (!q) return true;
-      return sub.providerName.toLowerCase().includes(q);
+      return (
+        sub.providerName.toLowerCase().includes(q) ||
+        (sub.providerEmail ?? "").toLowerCase().includes(q)
+      );
     });
   }, [subscriptions, search, tier, cycle]);
 
@@ -234,15 +238,25 @@ export default function SubscriptionsFilters({
                           <span className={s.infoCellTitle}>
                             {sub.providerName}
                           </span>
-                          <span className={s.infoCellSub}>
-                            {sub.status === "active"
-                              ? "نشط"
-                              : sub.status === "trialing"
-                                ? "فترة تجريبية"
-                                : sub.status === "past_due"
-                                  ? "متأخر السداد"
-                                  : sub.status}
-                          </span>
+                          {sub.providerEmail ? (
+                            <span
+                              dir="ltr"
+                              className={s.infoCellSub}
+                              style={{ direction: "ltr", textAlign: "right" }}
+                            >
+                              {sub.providerEmail}
+                            </span>
+                          ) : (
+                            <span className={s.infoCellSub}>
+                              {sub.status === "active"
+                                ? "نشط"
+                                : sub.status === "trialing"
+                                  ? "فترة تجريبية"
+                                  : sub.status === "past_due"
+                                    ? "متأخر السداد"
+                                    : sub.status}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>

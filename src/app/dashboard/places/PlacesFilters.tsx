@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Edit3, Trash2, Search, X, ChevronDown, Star, MapPin, Utensils, PartyPopper, Building2, Activity, Dices, Wallet, CheckCircle2, XCircle, Hourglass } from "lucide-react";
+import { Edit3, Trash2, Search, X, ChevronDown, Star, MapPin, Utensils, PartyPopper, Building2, Activity, Dices, Wallet, CheckCircle2, XCircle, Hourglass, Store, Mail, ShieldCheck, Filter } from "lucide-react";
 import s from "../shared.module.css";
 
 type PlaceStatus = "pending" | "approved" | "rejected" | "suspended";
@@ -18,7 +18,21 @@ type PlaceRow = {
   status?: PlaceStatus | null;
   created_at?: string;
   rejection_reason?: string | null;
+  /** Business name of the provider who created the place. */
+  owner_business?: string | null;
+  /** Provider's contact email — falls back to the auth account email. */
+  owner_email?: string | null;
+  /** Owner's full name from the profile (often the human behind the business). */
+  owner_name?: string | null;
+  /** When null the place was added by an admin from the dashboard. */
+  provider_id?: string | null;
 };
+
+const SOURCE_OPTIONS = [
+  { label: "كل المصادر", value: "all" as const },
+  { label: "أُضيف بواسطة الأدمن", value: "admin" as const },
+  { label: "أُضيف بواسطة مقدّم خدمة", value: "provider" as const },
+];
 
 // ── Fixed data from Flutter stepper ─────────────────────────────────────────
 
@@ -74,16 +88,20 @@ export default function PlacesFilters({
   const [selectedActivity, setSelectedActivity] = useState("الكل");
   const [selectedBudget, setSelectedBudget] = useState("الكل");
   const [minRating, setMinRating] = useState(0);
+  const [source, setSource] = useState<"all" | "admin" | "provider">("all");
   const [activityOpen, setActivityOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
+  const [sourceOpen, setSourceOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const activityRef = useRef<HTMLDivElement>(null);
   const budgetRef = useRef<HTMLDivElement>(null);
   const ratingRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<HTMLDivElement>(null);
 
-  // Suggestions
+  // Suggestions — also surface owner business / email so the admin can find a
+  // place by typing the seller's name (e.g. when chasing a complaint).
   const suggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
@@ -92,7 +110,10 @@ export default function PlacesFilters({
         (p) =>
           p.place_name.toLowerCase().includes(q) ||
           p.city_name.toLowerCase().includes(q) ||
-          p.activity_name?.toLowerCase().includes(q)
+          p.activity_name?.toLowerCase().includes(q) ||
+          p.owner_business?.toLowerCase().includes(q) ||
+          p.owner_email?.toLowerCase().includes(q) ||
+          p.owner_name?.toLowerCase().includes(q)
       )
       .slice(0, 6);
   }, [searchQuery, places]);
@@ -105,15 +126,22 @@ export default function PlacesFilters({
         !q ||
         p.place_name.toLowerCase().includes(q) ||
         p.city_name.toLowerCase().includes(q) ||
-        p.activity_name?.toLowerCase().includes(q);
+        p.activity_name?.toLowerCase().includes(q) ||
+        p.owner_business?.toLowerCase().includes(q) ||
+        p.owner_email?.toLowerCase().includes(q) ||
+        p.owner_name?.toLowerCase().includes(q);
       const matchActivity =
         selectedActivity === "الكل" || p.activity_name === selectedActivity;
       const matchBudget =
         selectedBudget === "الكل" || p.budget === selectedBudget;
       const matchRating = p.rating >= minRating;
-      return matchSearch && matchActivity && matchBudget && matchRating;
+      const matchSource =
+        source === "all" ||
+        (source === "admin" && !p.provider_id) ||
+        (source === "provider" && !!p.provider_id);
+      return matchSearch && matchActivity && matchBudget && matchRating && matchSource;
     });
-  }, [places, searchQuery, selectedActivity, selectedBudget, minRating]);
+  }, [places, searchQuery, selectedActivity, selectedBudget, minRating, source]);
 
   // Close on outside click
   useEffect(() => {
@@ -126,19 +154,26 @@ export default function PlacesFilters({
         setBudgetOpen(false);
       if (ratingRef.current && !ratingRef.current.contains(e.target as Node))
         setRatingOpen(false);
+      if (sourceRef.current && !sourceRef.current.contains(e.target as Node))
+        setSourceOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   const hasFilters =
-    searchQuery || selectedActivity !== "الكل" || selectedBudget !== "الكل" || minRating > 0;
+    searchQuery ||
+    selectedActivity !== "الكل" ||
+    selectedBudget !== "الكل" ||
+    minRating > 0 ||
+    source !== "all";
 
   function clearAll() {
     setSearchQuery("");
     setSelectedActivity("الكل");
     setSelectedBudget("الكل");
     setMinRating(0);
+    setSource("all");
   }
 
   const selectedActivityOpt = ACTIVITY_OPTIONS.find((o) => o.value === selectedActivity);
@@ -153,7 +188,7 @@ export default function PlacesFilters({
           <Search size={16} className={s.searchIcon} />
           <input
             type="text"
-            placeholder="ابحث عن مكان، مدينة، نشاط..."
+            placeholder="ابحث عن مكان، صاحب نشاط، إيميل، مدينة..."
             value={searchQuery}
             className={s.searchInput}
             onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
@@ -177,7 +212,9 @@ export default function PlacesFilters({
                 >
                   <span className={s.suggestionName}>{p.place_name}</span>
                   <span className={s.suggestionMeta}>
-                    {p.city_name} · {p.activity_name}
+                    {p.owner_business
+                      ? `${p.owner_business} · ${p.city_name}`
+                      : `${p.city_name} · ${p.activity_name}`}
                   </span>
                 </li>
               ))}
@@ -235,6 +272,42 @@ export default function PlacesFilters({
           )}
         </div>
 
+        {/* Source filter — admin-added vs provider-added */}
+        <div className={s.dropdownWrapper} ref={sourceRef}>
+          <button
+            className={`${s.dropdownTrigger} ${source !== "all" ? s.active : ""}`}
+            onClick={() => {
+              setSourceOpen((p) => !p);
+              setActivityOpen(false);
+              setBudgetOpen(false);
+              setRatingOpen(false);
+            }}
+          >
+            <Filter size={14} />
+            {SOURCE_OPTIONS.find((o) => o.value === source)?.label}
+            <ChevronDown
+              size={15}
+              className={sourceOpen ? s.chevronRotated : ""}
+            />
+          </button>
+          {sourceOpen && (
+            <ul className={s.dropdownMenu}>
+              {SOURCE_OPTIONS.map((opt) => (
+                <li
+                  key={opt.value}
+                  className={`${s.dropdownItem} ${source === opt.value ? s.selected : ""}`}
+                  onClick={() => {
+                    setSource(opt.value);
+                    setSourceOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         {/* Rating Filter */}
         <div className={s.dropdownWrapper} ref={ratingRef}>
           <button
@@ -274,6 +347,7 @@ export default function PlacesFilters({
           <thead>
             <tr>
               <th>المكان</th>
+              <th>صاحب المكان</th>
               <th>المدينة</th>
               <th>النشاط</th>
               <th>التقييم</th>
@@ -284,7 +358,7 @@ export default function PlacesFilters({
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className={s.emptyState}>
                     <div className={s.emptyStateIcon}><MapPin size={26} /></div>
                     <span className={s.emptyStateTitle}>لا توجد أماكن مطابقة</span>
@@ -329,6 +403,14 @@ export default function PlacesFilters({
                           <span className={s.infoCellSub}>{place.budget}</span>
                         </div>
                       </div>
+                    </td>
+                    <td>
+                      <OwnerCell
+                        business={place.owner_business}
+                        email={place.owner_email}
+                        name={place.owner_name}
+                        addedByAdmin={!place.provider_id}
+                      />
                     </td>
                     <td style={{ fontSize: "0.88rem" }}>{place.city_name}</td>
                     <td>
@@ -469,5 +551,121 @@ function StatusBadge({ status }: { status: PlaceStatus }) {
       <Icon size={12} />
       {cfg.label}
     </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Owner cell — surfaces who actually listed the place. The primary line is
+// the business name (what the admin recognises), the secondary line is the
+// owner's email so a quick reach-out is one copy away. If neither is set
+// (e.g. a legacy place imported before the providers table existed) we show
+// a soft "—" so the row doesn't look broken.
+// ---------------------------------------------------------------------------
+function OwnerCell({
+  business,
+  email,
+  name,
+  addedByAdmin,
+}: {
+  business?: string | null;
+  email?: string | null;
+  name?: string | null;
+  /** True when the place has no provider_id (added directly from dashboard). */
+  addedByAdmin?: boolean;
+}) {
+  // Admin-added rows have no provider — render a clean "trust" badge instead
+  // of an empty cell so the admin instantly knows this row didn't need
+  // review and didn't come from a mobile signup.
+  if (addedByAdmin) {
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "0.32rem 0.65rem",
+          borderRadius: "var(--radius-sm)",
+          background: "rgba(104,31,0,0.10)",
+          color: "#681F00",
+          fontSize: "0.78rem",
+          fontWeight: 700,
+        }}
+      >
+        <ShieldCheck size={13} />
+        أُضيف بواسطة الأدمن
+      </span>
+    );
+  }
+  if (!business && !email && !name) {
+    return <span style={{ color: "var(--color-gray-light)" }}>—</span>;
+  }
+  const primary = business ?? name ?? email ?? "—";
+  const secondary = email && primary !== email ? email : null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "0.55rem",
+        minWidth: 0,
+      }}
+    >
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: "var(--radius-sm)",
+          background: "rgba(104,31,0,0.08)",
+          color: "#681F00",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Store size={15} />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          gap: 2,
+        }}
+      >
+        <span
+          style={{
+            fontSize: "0.85rem",
+            fontWeight: 700,
+            color: "var(--color-text)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            maxWidth: 200,
+          }}
+        >
+          {primary}
+        </span>
+        {secondary && (
+          <span
+            dir="ltr"
+            style={{
+              fontSize: "0.74rem",
+              color: "var(--color-gray)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: 200,
+            }}
+          >
+            <Mail size={11} />
+            {secondary}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
