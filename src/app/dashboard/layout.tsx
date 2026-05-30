@@ -1,219 +1,43 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { currentAdminRole } from "@/lib/auth/role";
+import DashboardChrome from "./DashboardChrome";
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard, Users, MapPin, Star, Settings, LogOut, Activity,
-  Bell, Search, Menu, X, ChevronLeft, Store, CreditCard, Gavel, ShieldAlert,
-} from "lucide-react";
-import styles from "./layout.module.css";
-import { createClient } from "@/lib/supabase/client";
+/**
+ * Server-side wrapper for the dashboard chrome.
+ *
+ * Resolves the logged-in admin's display name + role once per request and
+ * passes them down to the (client) sidebar/topbar. That lets the sidebar
+ * hide super-admin-only entries without ever rendering them in the
+ * markup — a regular admin never sees a forbidden link they'd then bounce
+ * off of, and the role badge in the corner is always accurate.
+ */
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Defense in depth: the proxy middleware already enforces "must be an
+  // admin to see anything under /dashboard". If somehow that's bypassed
+  // (CDN cache mishap, etc) we still bounce.
+  const role = await currentAdminRole();
+  if (!role) redirect("/unauthorized");
 
-const navItems = [
-  { name: "نظرة عامة",      href: "/dashboard",               icon: LayoutDashboard, desc: "الإحصائيات" },
-  { name: "النشاط",          href: "/dashboard/activity",      icon: Activity,        desc: "كل اللي بيحصل" },
-  { name: "المستخدمون",     href: "/dashboard/users",         icon: Users,           desc: "إدارة الحسابات" },
-  { name: "مقدّمو الخدمة",  href: "/dashboard/providers",     icon: Store,           desc: "أصحاب الأنشطة" },
-  { name: "الاشتراكات",     href: "/dashboard/subscriptions", icon: CreditCard,      desc: "خطط الباقات والإيراد" },
-  { name: "الأماكن",        href: "/dashboard/places",        icon: MapPin,          desc: "إدارة الأماكن" },
-  { name: "الطعون",         href: "/dashboard/appeals",       icon: Gavel,           desc: "اعتراضات مقدّمي الخدمة" },
-  { name: "البلاغات",        href: "/dashboard/reports",       icon: ShieldAlert,     desc: "بلاغات المستخدمين" },
-  { name: "التقييمات",      href: "/dashboard/reviews",       icon: Star,            desc: "المراجعات" },
-  { name: "الإعدادات",      href: "/dashboard/settings",      icon: Settings,        desc: "إعدادات التطبيق" },
-];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+  const meta = (user?.user_metadata ?? {}) as {
+    full_name?: string;
+    name?: string;
   };
-
-  // Breadcrumb
-  const currentPage = navItems.find((i) => i.href === pathname);
+  const displayName =
+    meta.full_name ?? meta.name ?? user?.email?.split("@")[0] ?? "Admin";
 
   return (
-    <div className={styles.dashboardLayout}>
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
-      )}
-
-      {/* ── Sidebar ── */}
-      <aside
-        className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : styles.sidebarClosed} ${isCollapsed ? styles.sidebarCollapsed : ""}`}
-      >
-        {/* Logo */}
-        <div className={styles.sidebarHeader}>
-          <Link href="/dashboard" className={styles.logo}>
-            <div className={styles.logoIcon}>
-              <MapPin size={18} />
-            </div>
-            {!isCollapsed && (
-              <div className={styles.logoTextGroup}>
-                <span className={styles.logoText}>رفيق</span>
-                <span className={styles.logoSub}>لوحة التحكم</span>
-              </div>
-            )}
-          </Link>
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={styles.collapseBtn}
-            title={isCollapsed ? "توسيع" : "طي"}
-          >
-            <ChevronLeft
-              size={15}
-              style={{
-                transform: isCollapsed ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.3s ease",
-              }}
-            />
-          </button>
-        </div>
-
-        {/* Nav */}
-        <nav className={styles.nav}>
-          {!isCollapsed && (
-            <span className={styles.navGroupLabel}>القائمة الرئيسية</span>
-          )}
-          {navItems.map((item) => {
-            const isActive = pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${styles.navItem} ${isActive ? styles.navItemActive : ""}`}
-                title={isCollapsed ? item.name : undefined}
-              >
-                <div className={styles.navItemIcon}>
-                  <item.icon size={19} />
-                </div>
-                {!isCollapsed && (
-                  <div className={styles.navItemBody}>
-                    <span className={styles.navItemName}>{item.name}</span>
-                    <span className={styles.navItemDesc}>{item.desc}</span>
-                  </div>
-                )}
-                {isActive && !isCollapsed && <div className={styles.navActiveIndicator} />}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Footer */}
-        <div className={styles.sidebarFooter}>
-          {!isCollapsed && (
-            <div className={styles.sidebarProfile}>
-              <div className={styles.sidebarAvatar}>أ</div>
-              <div className={styles.sidebarProfileInfo}>
-                <span className={styles.sidebarProfileName}>أحمد عمر ماهر</span>
-                <span className={styles.sidebarProfileRole}>Super Admin</span>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={() => setShowLogoutModal(true)}
-            className={styles.logoutButton}
-            title={isCollapsed ? "تسجيل الخروج" : undefined}
-          >
-            <LogOut size={17} />
-            {!isCollapsed && <span>تسجيل الخروج</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* ── Main Content ── */}
-      <main className={styles.mainContent}>
-        {/* Topbar */}
-        <header className={styles.topbar}>
-          <div className={styles.topbarLeft}>
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`${styles.iconBtn} ${styles.menuBtn}`}
-            >
-              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-
-            {/* Breadcrumb */}
-            {currentPage && (
-              <div className={styles.breadcrumb}>
-                <span className={styles.breadcrumbRoot}>رفيق</span>
-                <ChevronLeft size={14} className={styles.breadcrumbSep} />
-                <span className={styles.breadcrumbCurrent}>
-                  <currentPage.icon size={15} style={{ display: "inline-block", verticalAlign: "middle", marginBottom: "2px" }} /> {currentPage.name}
-                </span>
-              </div>
-            )}
-
-            <div className={styles.searchContainer}>
-              <Search className={styles.searchIcon} size={15} />
-              <input
-                type="text"
-                placeholder="ابحث في الداشبورد..."
-                className={styles.searchInput}
-              />
-            </div>
-          </div>
-
-          <div className={styles.topbarRight}>
-            <button className={`${styles.iconBtn} ${styles.bellBtn}`}>
-              <Bell size={19} />
-              <span className={styles.badge}>3</span>
-            </button>
-
-            <div className={styles.topbarDivider} />
-
-            <div className={styles.profileChip}>
-              <div className={styles.profileAvatar}>أ</div>
-              <div className={styles.profileInfo}>
-                <span className={styles.profileName}>أحمد عمر ماهر</span>
-                <span className={styles.profileRole}>Super Admin</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <div className={styles.pageContainer}>{children}</div>
-      </main>
-
-      {/* ── Logout Modal ── */}
-      {showLogoutModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalIconWrap}>
-                <LogOut size={26} strokeWidth={2.5} />
-              </div>
-              <h3 className={styles.modalTitle}>تسجيل الخروج</h3>
-            </div>
-            <p className={styles.modalBody}>
-              هل أنت متأكد أنك تريد تسجيل الخروج من لوحة تحكم رفيق؟
-            </p>
-            <div className={styles.modalActions}>
-              <button 
-                onClick={() => setShowLogoutModal(false)}
-                className={styles.modalCancelBtn}
-              >
-                إلغاء
-              </button>
-              <button 
-                onClick={handleLogout}
-                className={styles.modalConfirmBtn}
-              >
-                تأكيد الخروج
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    <DashboardChrome role={role} displayName={displayName}>
+      {children}
+    </DashboardChrome>
   );
 }

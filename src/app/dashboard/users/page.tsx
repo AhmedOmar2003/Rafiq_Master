@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Users, UserCheck, Shield, Store } from "lucide-react";
 import s from "../shared.module.css";
 import UsersFilters from "./UsersFilters";
+import AddUserButton from "./AddUserButton";
+import { requireSuperAdmin } from "@/lib/auth/role";
 
 export const metadata = { title: "إدارة المستخدمين - رفيق" };
 
@@ -13,6 +15,9 @@ type ProviderRow = { id: string; owner_id: string };
 type SubscriptionRow = { provider_id: string };
 
 export default async function UsersPage() {
+  // Account creation + role changes = super-admin only. Day-to-day mods
+  // moderate places/reviews/reports but cannot touch identity.
+  await requireSuperAdmin();
   const supabase = createAdminClient();
 
   // Four parallel reads. The provider classification needs a JOIN between
@@ -92,8 +97,11 @@ export default async function UsersPage() {
           </div>
           <h1 className={s.pageTitle}>إدارة المستخدمين</h1>
           <p className={s.pageSubtitle}>
-            متابعة حسابات المستخدمين وأدوار الإدارة
+            متابعة حسابات المستخدمين وأدوار الإدارة. اضغط &quot;إضافة مستخدم&quot; لإنشاء حساب جديد بأي دور.
           </p>
+        </div>
+        <div className={s.pageHeaderRight}>
+          <AddUserButton />
         </div>
       </div>
 

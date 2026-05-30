@@ -1,10 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  Settings, User, Database, Bell, Shield, Info,
+  User, Database, Bell, Shield, Info,
   MapPin, Star, Users,
 } from "lucide-react";
 import s from "../shared.module.css";
 import ls from "./page.module.css";
+import { requireSuperAdmin } from "@/lib/auth/role";
 
 export const metadata = { title: "الإعدادات - رفيق" };
 
@@ -12,6 +13,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function SettingsPage() {
+  // Platform settings + admin profile = super-admin surface only.
+  await requireSuperAdmin();
   const supabase = createAdminClient();
 
   const [

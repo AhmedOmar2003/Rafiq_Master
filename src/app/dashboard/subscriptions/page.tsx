@@ -4,6 +4,7 @@ import s from "../shared.module.css";
 import SubscriptionsFilters, {
   type SubscriptionRow,
 } from "./SubscriptionsFilters";
+import { requireSuperAdmin } from "@/lib/auth/role";
 
 export const metadata = { title: "الاشتراكات - رفيق" };
 
@@ -50,6 +51,8 @@ type ProviderRow = {
  * imputed so MRR isn't artificially zero before the gateway goes live.
  */
 export default async function SubscriptionsPage() {
+  // Revenue is super-admin only — regular admins moderate but don't see money.
+  await requireSuperAdmin();
   const supabase = createAdminClient();
 
   const [
