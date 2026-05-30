@@ -91,7 +91,7 @@ export async function deletePlace(place_id: number): Promise<void> {
  */
 export async function setPlaceStatus(
   placeId: number,
-  status: "pending" | "approved" | "rejected" | "suspended",
+  status: "pending" | "under_review" | "approved" | "rejected" | "suspended",
   rejectionReason?: string,
 ): Promise<void> {
   const supabase = createAdminClient();
