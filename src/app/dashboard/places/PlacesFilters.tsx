@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Edit3, Trash2, Search, X, ChevronDown, Star, MapPin, Utensils, PartyPopper, Building2, Activity, Dices, Wallet, CheckCircle2, XCircle, Hourglass, Store, Mail, ShieldCheck, Filter } from "lucide-react";
 import s from "../shared.module.css";
 
-type PlaceStatus = "pending" | "approved" | "rejected" | "suspended";
+type PlaceStatus = "pending" | "under_review" | "approved" | "rejected" | "suspended";
 
 type PlaceRow = {
   place_id: number;
@@ -445,7 +445,7 @@ export default function PlacesFilters({
                       </div>
                     </td>
                     <td>
-                      <StatusBadge status={(place.status ?? "pending") as PlaceStatus} />
+                      <StatusBadge status={place.status ?? "pending"} />
                     </td>
                     <td>
                       <div className={s.actionGroup}>
@@ -643,12 +643,18 @@ export default function PlacesFilters({
 // The same colour scheme is used by the Flutter "under review" card so the
 // admin and the provider see the same state in the same shade.
 // ---------------------------------------------------------------------------
-function StatusBadge({ status }: { status: PlaceStatus }) {
-  const map: Record<PlaceStatus, { label: string; bg: string; fg: string; icon: typeof Hourglass }> = {
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; bg: string; fg: string; icon: typeof Hourglass }> = {
     pending: {
       label: "قيد المراجعة",
       bg: "rgba(217,119,6,0.12)",
       fg: "#d97706",
+      icon: Hourglass,
+    },
+    under_review: {
+      label: "تحت المراجعة",
+      bg: "rgba(59,130,246,0.12)",
+      fg: "#2563eb",
       icon: Hourglass,
     },
     approved: {
@@ -670,7 +676,13 @@ function StatusBadge({ status }: { status: PlaceStatus }) {
       icon: XCircle,
     },
   };
-  const cfg = map[status];
+  // Fallback for any unknown status so the page never crashes
+  const cfg = map[status] ?? {
+    label: status,
+    bg: "rgba(107,114,128,0.10)",
+    fg: "#6b7280",
+    icon: Hourglass,
+  };
   const Icon = cfg.icon;
   return (
     <span
