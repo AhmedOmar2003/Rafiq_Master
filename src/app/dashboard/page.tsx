@@ -83,13 +83,17 @@ export default async function DashboardOverview() {
     supabase.from("places").select("city_name").limit(1000),
     // Activity distribution
     supabase.from("places").select("activity_name").limit(1000),
-    // Providers total
+    // Providers total — every business row (incl. ones that bailed before
+    // confirming a plan). Used only as a denominator; the headline
+    // "مقدّمو الخدمة" KPI uses subscribed-providers below.
     supabase.from("providers").select("*", { count: "exact", head: true }),
-    // Active subscriptions for paid-subs KPI + MRR projection
+    // Active subscriptions for paid-subs KPI + MRR projection. After
+    // migration 0026, Free providers also have a row here, so the count of
+    // *distinct provider_id values* is the true "confirmed providers" count.
     supabase
       .from("provider_subscriptions")
       .select(
-        "tier, amount_paid_egp, metadata, period_start, period_end, status"
+        "tier, amount_paid_egp, metadata, period_start, period_end, status, provider_id"
       )
       .in("status", ["active", "trialing", "past_due"]),
     // Catalog for amount imputation on demo rows
@@ -161,6 +165,7 @@ export default async function DashboardOverview() {
     metadata: Record<string, unknown> | null;
     period_start: string | null;
     period_end: string | null;
+    provider_id: string;
   };
   type CatalogLite = {
     tier: string;
@@ -172,7 +177,12 @@ export default async function DashboardOverview() {
     catalogMap.set(row.tier, row);
   }
   const subs = (subsData ?? []) as SubLite[];
-  const paidSubsCount = subs.length;
+  // Paid subs = Pro/Max (the revenue line). Free subs still count as
+  // confirmed providers but don't move the paid KPI.
+  const paidSubsCount = subs.filter((s) => s.tier !== "free").length;
+  // Confirmed providers = distinct provider_id values that have an active sub
+  // (any tier). This is the "true" number the admin should see.
+  const confirmedProvidersCount = new Set(subs.map((s) => s.provider_id)).size;
   const mrr = subs.reduce((acc, sub) => {
     const start = sub.period_start ? new Date(sub.period_start).getTime() : 0;
     const end = sub.period_end ? new Date(sub.period_end).getTime() : 0;
@@ -285,12 +295,16 @@ export default async function DashboardOverview() {
             <Store size={22} />
           </div>
           <div className={styles.statBody}>
-            <span className={styles.statValue}>{totalProviders}</span>
+            <span className={styles.statValue}>{confirmedProvidersCount}</span>
             <span className={styles.statLabel}>مقدّمو الخدمة</span>
           </div>
           <div className={styles.statTrend}>
             <ArrowUpRight size={16} />
-            <span>أنشطة</span>
+            <span>
+              {totalProviders > confirmedProvidersCount
+                ? `${totalProviders - confirmedProvidersCount} لم يكمل`
+                : "مؤكّدون"}
+            </span>
           </div>
         </div>
 

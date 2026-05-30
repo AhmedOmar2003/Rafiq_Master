@@ -1,9 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
-import { Plus, MapPin, Star, Trophy } from "lucide-react";
+import { Plus, MapPin, Star, Trophy, Hourglass, CheckCircle2 } from "lucide-react";
 import s from "../shared.module.css";
 import PlacesFilters from "./PlacesFilters";
-import { deletePlace } from "./actions";
+import { deletePlace, setPlaceStatus } from "./actions";
 
 export const metadata = { title: "إدارة الأماكن - رفيق" };
 
@@ -18,6 +18,9 @@ type PlaceRow = {
   rating: number;
   budget: string;
   image_path: string | null;
+  status: "pending" | "approved" | "rejected" | "suspended" | null;
+  created_at: string;
+  rejection_reason: string | null;
 };
 
 export default async function PlacesPage() {
@@ -26,13 +29,17 @@ export default async function PlacesPage() {
   const [{ data: places }, { count: total }] = await Promise.all([
     supabase
       .from("places")
-      .select("place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at")
+      .select(
+        "place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason",
+      )
       .order("created_at", { ascending: false })
       .limit(250),
     supabase.from("places").select("*", { count: "exact", head: true }),
   ]);
 
   const placeRows = (places ?? []) as PlaceRow[];
+  const pendingCount = placeRows.filter((p) => (p.status ?? "pending") === "pending").length;
+  const approvedCount = placeRows.filter((p) => p.status === "approved").length;
 
   // Activity distribution
   const actMap: Record<string, number> = {};
@@ -84,7 +91,25 @@ export default async function PlacesPage() {
           </div>
         </div>
         <div className={s.statCard}>
+          <div className={s.statIcon} style={{ background: "rgba(245,158,11,0.12)", color: "#d97706" }}>
+            <Hourglass size={22} />
+          </div>
+          <div className={s.statBody}>
+            <div className={s.statValue}>{pendingCount}</div>
+            <div className={s.statLabel}>قيد المراجعة</div>
+          </div>
+        </div>
+        <div className={s.statCard}>
           <div className={s.statIcon} style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+            <CheckCircle2 size={22} />
+          </div>
+          <div className={s.statBody}>
+            <div className={s.statValue}>{approvedCount}</div>
+            <div className={s.statLabel}>تم الاعتماد</div>
+          </div>
+        </div>
+        <div className={s.statCard}>
+          <div className={s.statIcon} style={{ background: "rgba(139,92,246,0.12)", color: "#7c3aed" }}>
             <Trophy size={22} />
           </div>
           <div className={s.statBody}>
@@ -94,7 +119,11 @@ export default async function PlacesPage() {
         </div>
       </div>
 
-      <PlacesFilters places={placeRows} deleteAction={deletePlace} />
+      <PlacesFilters
+        places={placeRows}
+        deleteAction={deletePlace}
+        setStatusAction={setPlaceStatus}
+      />
     </div>
   );
 }

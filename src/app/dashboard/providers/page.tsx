@@ -46,6 +46,7 @@ export default async function ProvidersPage() {
   const [
     { data: providersData, error },
     { data: plansData },
+    { data: confirmedSubsData },
     { data: placesData },
   ] = await Promise.all([
     supabase
@@ -57,6 +58,13 @@ export default async function ProvidersPage() {
     supabase
       .from("provider_current_plan")
       .select("provider_id, tier, status, period_end, cancel_at_period_end"),
+    // The view above COALESCEs missing rows to 'active' Free, so it can't be
+    // trusted to flag "has the user actually confirmed?". We hit the raw
+    // table directly with the real status filter for that.
+    supabase
+      .from("provider_subscriptions")
+      .select("provider_id")
+      .in("status", ["active", "trialing", "past_due"]),
     supabase.from("places").select("provider_id"),
   ]);
 
@@ -74,6 +82,14 @@ export default async function ProvidersPage() {
   for (const row of (plansData ?? []) as CurrentPlanRow[]) {
     planByProvider.set(row.provider_id, row);
   }
+  // Providers who have actually confirmed a plan (any tier, including Free
+  // after migration 0026). The list this page renders is filtered to just
+  // these — half-finished onboarding rows don't muddy the admin's view.
+  const confirmedProviderIds = new Set(
+    ((confirmedSubsData ?? []) as { provider_id: string }[]).map(
+      (r) => r.provider_id
+    )
+  );
 
   const placeCount = new Map<string, number>();
   for (const row of (placesData ?? []) as PlaceRow[]) {
@@ -81,8 +97,9 @@ export default async function ProvidersPage() {
     placeCount.set(row.provider_id, (placeCount.get(row.provider_id) ?? 0) + 1);
   }
 
-  const providers: ProviderRow[] = (providersData ?? [] as RawProvider[]).map(
-    (p: RawProvider) => {
+  const providers: ProviderRow[] = (providersData ?? ([] as RawProvider[]))
+    .filter((p: RawProvider) => confirmedProviderIds.has(p.id))
+    .map((p: RawProvider) => {
       const plan = planByProvider.get(p.id);
       return {
         id: p.id,
@@ -97,8 +114,7 @@ export default async function ProvidersPage() {
         cancelAtPeriodEnd: plan?.cancel_at_period_end ?? false,
         placeCount: placeCount.get(p.id) ?? 0,
       };
-    }
-  );
+    });
 
   const total = providers.length;
   const approved = providers.filter((p) => p.status === "approved").length;

@@ -9,31 +9,36 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type AdminRoleRow = { user_id: string; role: "admin" | "super_admin" };
-type ProviderOwnerRow = { owner_id: string };
+type ProviderRow = { id: string; owner_id: string };
+type SubscriptionRow = { provider_id: string };
 
 export default async function UsersPage() {
   const supabase = createAdminClient();
 
-  // Three parallel reads:
-  //   - auth.users      → the canonical account list (email, created_at, metadata)
-  //   - admin_roles     → dashboard moderation roles (admin / super_admin)
-  //   - providers       → AUTHORITATIVE provider list. The `user_roles` table
-  //                        gets a 'provider' entry the moment somebody taps
-  //                        "Become a provider", but that doesn't mean they
-  //                        actually finished onboarding. The `providers` row
-  //                        only exists after `become_provider()` succeeded
-  //                        AND the user committed a business name, so it's
-  //                        the single source of truth the admin should see.
-  //                        A "regular user" is just an authenticated account
-  //                        with NO providers row.
+  // Four parallel reads. The provider classification needs a JOIN between
+  // `providers` (who has a business row) and `provider_subscriptions` (who
+  // actually confirmed a plan). The product rule:
+  //
+  //   * مقدّم خدمة  = has a providers row AND an active subscription row
+  //                  (any tier including Free — Free still means "I
+  //                  confirmed a plan and am listing a business").
+  //   * مستخدم عادي = does NOT have an active subscription row. They might
+  //                  still have a half-finished providers row (started
+  //                  onboarding then bailed at the plan screen) — that
+  //                  still doesn't count as a provider.
   const [
     { data: authUsers, error },
     { data: adminRoles },
     { data: providerRows },
+    { data: subRows },
   ] = await Promise.all([
     supabase.auth.admin.listUsers(),
     supabase.from("admin_roles").select("user_id, role"),
-    supabase.from("providers").select("owner_id"),
+    supabase.from("providers").select("id, owner_id"),
+    supabase
+      .from("provider_subscriptions")
+      .select("provider_id")
+      .in("status", ["active", "trialing", "past_due"]),
   ]);
 
   if (error) {
@@ -49,8 +54,13 @@ export default async function UsersPage() {
   const adminMap = new Map(
     ((adminRoles ?? []) as AdminRoleRow[]).map((r) => [r.user_id, r.role])
   );
+  const subscribedProviderIds = new Set(
+    ((subRows ?? []) as SubscriptionRow[]).map((r) => r.provider_id)
+  );
   const providerSet = new Set(
-    ((providerRows ?? []) as ProviderOwnerRow[]).map((r) => r.owner_id)
+    ((providerRows ?? []) as ProviderRow[])
+      .filter((p) => subscribedProviderIds.has(p.id))
+      .map((p) => p.owner_id)
   );
 
   const users = (authUsers?.users ?? []).map((u) => ({

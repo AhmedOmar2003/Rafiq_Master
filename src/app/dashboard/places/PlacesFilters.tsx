@@ -2,8 +2,10 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Edit3, Trash2, Search, X, ChevronDown, Star, MapPin, Utensils, PartyPopper, Building2, Activity, Dices, Wallet } from "lucide-react";
+import { Edit3, Trash2, Search, X, ChevronDown, Star, MapPin, Utensils, PartyPopper, Building2, Activity, Dices, Wallet, CheckCircle2, XCircle, Hourglass } from "lucide-react";
 import s from "../shared.module.css";
+
+type PlaceStatus = "pending" | "approved" | "rejected" | "suspended";
 
 type PlaceRow = {
   place_id: number;
@@ -13,6 +15,9 @@ type PlaceRow = {
   rating: number;
   budget: string;
   image_path: string | null;
+  status?: PlaceStatus | null;
+  created_at?: string;
+  rejection_reason?: string | null;
 };
 
 // ── Fixed data from Flutter stepper ─────────────────────────────────────────
@@ -54,9 +59,15 @@ const ACTIVITY_COLORS: Record<string, string> = {
 export default function PlacesFilters({
   places,
   deleteAction,
+  setStatusAction,
 }: {
   places: PlaceRow[];
   deleteAction: (id: number) => Promise<void>;
+  setStatusAction?: (
+    id: number,
+    status: PlaceStatus,
+    rejectionReason?: string,
+  ) => Promise<void>;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -266,13 +277,14 @@ export default function PlacesFilters({
               <th>المدينة</th>
               <th>النشاط</th>
               <th>التقييم</th>
+              <th>الحالة</th>
               <th>الإجراءات</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <div className={s.emptyState}>
                     <div className={s.emptyStateIcon}><MapPin size={26} /></div>
                     <span className={s.emptyStateTitle}>لا توجد أماكن مطابقة</span>
@@ -346,7 +358,46 @@ export default function PlacesFilters({
                       </div>
                     </td>
                     <td>
+                      <StatusBadge status={(place.status ?? "pending") as PlaceStatus} />
+                    </td>
+                    <td>
                       <div className={s.actionGroup}>
+                        {setStatusAction && (place.status ?? "pending") !== "approved" && (
+                          <form action={setStatusAction.bind(null, place.place_id, "approved", undefined)}>
+                            <button
+                              type="submit"
+                              className={`${s.actionBtn}`}
+                              style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}
+                              title="اعتماد"
+                            >
+                              <CheckCircle2 size={16} />
+                            </button>
+                          </form>
+                        )}
+                        {setStatusAction && (place.status ?? "pending") !== "rejected" && (
+                          <form action={setStatusAction.bind(null, place.place_id, "rejected", undefined)}>
+                            <button
+                              type="submit"
+                              className={`${s.actionBtn}`}
+                              style={{ background: "rgba(220,38,38,0.12)", color: "#dc2626" }}
+                              title="رفض"
+                            >
+                              <XCircle size={16} />
+                            </button>
+                          </form>
+                        )}
+                        {setStatusAction && (place.status ?? "pending") !== "pending" && (
+                          <form action={setStatusAction.bind(null, place.place_id, "pending", undefined)}>
+                            <button
+                              type="submit"
+                              className={`${s.actionBtn}`}
+                              style={{ background: "rgba(217,119,6,0.12)", color: "#d97706" }}
+                              title="إعادة للمراجعة"
+                            >
+                              <Hourglass size={16} />
+                            </button>
+                          </form>
+                        )}
                         <Link
                           href={`/dashboard/places/${place.place_id}/edit`}
                           className={`${s.actionBtn} ${s.actionBtnEdit}`}
@@ -373,5 +424,50 @@ export default function PlacesFilters({
         </table>
       </div>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Status badge — single source of moderation truth surfaced in the table.
+// The same colour scheme is used by the Flutter "under review" card so the
+// admin and the provider see the same state in the same shade.
+// ---------------------------------------------------------------------------
+function StatusBadge({ status }: { status: PlaceStatus }) {
+  const map: Record<PlaceStatus, { label: string; bg: string; fg: string; icon: typeof Hourglass }> = {
+    pending: {
+      label: "قيد المراجعة",
+      bg: "rgba(217,119,6,0.12)",
+      fg: "#d97706",
+      icon: Hourglass,
+    },
+    approved: {
+      label: "معتمد",
+      bg: "rgba(16,185,129,0.12)",
+      fg: "#10b981",
+      icon: CheckCircle2,
+    },
+    rejected: {
+      label: "مرفوض",
+      bg: "rgba(220,38,38,0.12)",
+      fg: "#dc2626",
+      icon: XCircle,
+    },
+    suspended: {
+      label: "معلّق",
+      bg: "rgba(75,85,99,0.12)",
+      fg: "#4b5563",
+      icon: XCircle,
+    },
+  };
+  const cfg = map[status];
+  const Icon = cfg.icon;
+  return (
+    <span
+      className={s.badge}
+      style={{ background: cfg.bg, color: cfg.fg, display: "inline-flex", alignItems: "center", gap: 4 }}
+    >
+      <Icon size={12} />
+      {cfg.label}
+    </span>
   );
 }
