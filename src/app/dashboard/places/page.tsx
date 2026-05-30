@@ -34,27 +34,67 @@ type ProviderInfoRow = {
 export default async function PlacesPage() {
   const supabase = createAdminClient();
 
-  // Pull places + providers + auth.users in parallel. The places table only
-  // carries `provider_id` as an FK, so we resolve the business name and the
-  // owner's email/full_name by joining on the client. With the indexes from
-  // migration 0025, these three reads stay sub-100ms even at scale.
-  const [
-    { data: places },
-    { count: total },
-    { data: providersData },
-    { data: authUsersData },
-  ] = await Promise.all([
-    supabase
-      .from("places")
-      .select(
-        "place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id",
-      )
-      .order("created_at", { ascending: false })
-      .limit(250),
-    supabase.from("places").select("*", { count: "exact", head: true }),
-    supabase.from("providers").select("id,owner_id,business_name,contact_email"),
-    supabase.auth.admin.listUsers(),
-  ]);
+  // Pull every read in parallel — but settle independently so one failure
+  // doesn't tank the whole page. The providers + auth.users joins are
+  // *enrichment*; if they ever throw (RLS drift, transient auth API hiccup,
+  // bad column rename), the page should still render the core places table.
+  // We log the per-source error so it surfaces in Vercel logs instead of
+  // showing the user a black 500 page.
+  const [placesResult, totalResult, providersResult, authResult] =
+    await Promise.allSettled([
+      supabase
+        .from("places")
+        .select(
+          "place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id",
+        )
+        .order("created_at", { ascending: false })
+        .limit(250),
+      supabase.from("places").select("*", { count: "exact", head: true }),
+      supabase
+        .from("providers")
+        .select("id,owner_id,business_name,contact_email"),
+      supabase.auth.admin.listUsers(),
+    ]);
+
+  function unwrap<T>(
+    label: string,
+    r: PromiseSettledResult<{ data: T | null; error: unknown }>,
+  ): T | null {
+    if (r.status === "rejected") {
+      console.error(`[PlacesPage] ${label} rejected:`, r.reason);
+      return null;
+    }
+    if (r.value.error) {
+      console.error(`[PlacesPage] ${label} error:`, r.value.error);
+    }
+    return r.value.data;
+  }
+
+  const places = unwrap<RawPlaceRow[]>("places", placesResult);
+  const providersData = unwrap<ProviderInfoRow[]>("providers", providersResult);
+
+  // count comes from a head-only query, the shape is slightly different.
+  let total = 0;
+  if (totalResult.status === "fulfilled") {
+    total = (totalResult.value as { count: number | null }).count ?? 0;
+  } else {
+    console.error("[PlacesPage] total count rejected:", totalResult.reason);
+  }
+
+  // auth.admin.listUsers returns { data: { users: [...] }, error }; we only
+  // need the users array. Failure here is non-fatal — owner emails just go
+  // null and the OwnerCell falls back to the business name.
+  type AuthUser = { id: string; email?: string; user_metadata?: unknown };
+  let authUsers: AuthUser[] = [];
+  if (authResult.status === "fulfilled") {
+    const data = authResult.value.data as unknown as { users?: AuthUser[] };
+    authUsers = data?.users ?? [];
+    if (authResult.value.error) {
+      console.error("[PlacesPage] listUsers error:", authResult.value.error);
+    }
+  } else {
+    console.error("[PlacesPage] listUsers rejected:", authResult.reason);
+  }
 
   const rawRows = (places ?? []) as RawPlaceRow[];
 
@@ -65,7 +105,7 @@ export default async function PlacesPage() {
     providerById.set(p.id, p);
   }
   const ownerById = new Map<string, { email?: string; name?: string }>();
-  for (const u of authUsersData?.users ?? []) {
+  for (const u of authUsers) {
     const meta = (u.user_metadata ?? {}) as { full_name?: string; name?: string };
     ownerById.set(u.id, {
       email: u.email,
