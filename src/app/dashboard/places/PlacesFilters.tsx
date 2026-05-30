@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { Edit3, Trash2, Search, X, ChevronDown, Star, MapPin, Utensils, PartyPopper, Building2, Activity, Dices, Wallet, CheckCircle2, XCircle, Hourglass, Store, Mail, ShieldCheck, Filter } from "lucide-react";
 import s from "../shared.module.css";
@@ -93,6 +93,11 @@ export default function PlacesFilters({
   const [budgetOpen, setBudgetOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
+
+  // Rejection dialog — shown when the admin clicks ❌
+  const [rejectTarget, setRejectTarget] = useState<PlaceRow | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const searchRef = useRef<HTMLDivElement>(null);
   const activityRef = useRef<HTMLDivElement>(null);
@@ -457,16 +462,15 @@ export default function PlacesFilters({
                           </form>
                         )}
                         {setStatusAction && (place.status ?? "pending") !== "rejected" && (
-                          <form action={setStatusAction.bind(null, place.place_id, "rejected", undefined)}>
-                            <button
-                              type="submit"
-                              className={`${s.actionBtn}`}
-                              style={{ background: "rgba(220,38,38,0.12)", color: "#dc2626" }}
-                              title="رفض"
-                            >
-                              <XCircle size={16} />
-                            </button>
-                          </form>
+                          <button
+                            type="button"
+                            className={`${s.actionBtn}`}
+                            style={{ background: "rgba(220,38,38,0.12)", color: "#dc2626" }}
+                            title="رفض مع كتابة السبب"
+                            onClick={() => { setRejectTarget(place); setRejectReason(""); }}
+                          >
+                            <XCircle size={16} />
+                          </button>
                         )}
                         {setStatusAction && (place.status ?? "pending") !== "pending" && (
                           <form action={setStatusAction.bind(null, place.place_id, "pending", undefined)}>
@@ -505,6 +509,131 @@ export default function PlacesFilters({
           </tbody>
         </table>
       </div>
+
+      {/* ── Rejection-reason dialog ── */}
+      {rejectTarget && (
+        <div
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 9999,
+          }}
+          onClick={(e) => e.target === e.currentTarget && setRejectTarget(null)}
+        >
+          <div
+            style={{
+              background: "var(--color-card, #fff)",
+              borderRadius: "var(--radius-xl, 16px)",
+              padding: "2rem",
+              width: "min(480px, 90vw)",
+              display: "flex", flexDirection: "column", gap: "1.2rem",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 10,
+                background: "rgba(220,38,38,0.10)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <XCircle size={22} color="#dc2626" />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontWeight: 800, fontSize: "1.05rem" }}>
+                  رفض المكان
+                </h3>
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--color-gray, #6b7280)" }}>
+                  {rejectTarget.place_name}
+                </p>
+              </div>
+              <button
+                onClick={() => setRejectTarget(null)}
+                style={{
+                  marginRight: "auto", background: "none", border: "none",
+                  cursor: "pointer", color: "var(--color-gray)", padding: 4,
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Reason input */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <label style={{ fontWeight: 700, fontSize: "0.88rem" }}>
+                سبب الرفض <span style={{ color: "#dc2626" }}>*</span>
+              </label>
+              <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--color-gray)" }}>
+                سيظهر هذا السبب للمزوّد مباشرةً في تطبيق رفيق عبر الـ Realtime.
+              </p>
+              <textarea
+                rows={4}
+                dir="rtl"
+                placeholder="مثال: الصور غير واضحة — يرجى تحديث صور المكان أو تعديل الوصف ليعكس الخدمة الفعلية."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                style={{
+                  width: "100%", resize: "vertical",
+                  padding: "0.75rem 1rem",
+                  border: "1.5px solid var(--color-border, #e5e7eb)",
+                  borderRadius: "var(--radius-md, 10px)",
+                  fontSize: "0.9rem", fontFamily: "inherit",
+                  lineHeight: 1.6,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "var(--color-primary, #681F00)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "var(--color-border, #e5e7eb)")
+                }
+              />
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                onClick={() => setRejectTarget(null)}
+                style={{
+                  flex: 1, padding: "0.75rem",
+                  border: "1.5px solid var(--color-border, #e5e7eb)",
+                  borderRadius: "var(--radius-md, 10px)",
+                  background: "none", cursor: "pointer",
+                  fontWeight: 700, fontSize: "0.9rem",
+                }}
+              >
+                إلغاء
+              </button>
+              <button
+                disabled={!rejectReason.trim() || isPending}
+                onClick={() => {
+                  if (!setStatusAction || !rejectReason.trim()) return;
+                  const target = rejectTarget;
+                  const reason = rejectReason.trim();
+                  startTransition(async () => {
+                    await setStatusAction(target.place_id, "rejected", reason);
+                    setRejectTarget(null);
+                    setRejectReason("");
+                  });
+                }}
+                style={{
+                  flex: 1, padding: "0.75rem",
+                  background: rejectReason.trim() && !isPending ? "#dc2626" : "#fca5a5",
+                  border: "none",
+                  borderRadius: "var(--radius-md, 10px)",
+                  color: "#fff", cursor: rejectReason.trim() && !isPending ? "pointer" : "not-allowed",
+                  fontWeight: 800, fontSize: "0.9rem",
+                  transition: "background 0.2s",
+                }}
+              >
+                {isPending ? "جارٍ الرفض…" : "تأكيد الرفض ❌"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
