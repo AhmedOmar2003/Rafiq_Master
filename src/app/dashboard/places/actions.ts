@@ -96,12 +96,11 @@ export async function setPlaceStatus(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  // Migration 0030 relaxes the places guard trigger to also accept connections
-  // authenticated as `service_role` — which is the role the admin client uses.
-  // That makes a direct UPDATE here legitimate again, no RPC needed. The
-  // trigger still rejects writes from regular authenticated users that aren't
-  // moderators, so the security surface is unchanged for clients.
-  const patch: Record<string, unknown> = {
+  // Migration 0030 relaxes the places guard trigger so connections
+  // authenticated as `service_role` are accepted as moderators. The admin
+  // client uses service_role, so this direct UPDATE is now legitimate and
+  // simpler than the RPC indirection the previous build tried (and broke).
+  const patch = {
     status,
     rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
     approved_at: status === "approved" ? new Date().toISOString() : null,
@@ -109,13 +108,19 @@ export async function setPlaceStatus(
     updated_at: new Date().toISOString(),
   };
 
-  const placesTable = supabase.from("places") as ReturnType<
-    ReturnType<typeof createAdminClient>["from"]
-  >;
-  const { error } = await placesTable.update(patch).eq("place_id", placeId);
+  // Log inputs so a future Vercel error surfaces the row we tried to touch.
+  // The 500 swallows our throw() in production; this is the cheapest way to
+  // get visibility back.
+  console.log("[setPlaceStatus]", { placeId, status });
+
+  const { error } = await supabase
+    .from("places")
+    .update(patch as never)
+    .eq("place_id", placeId);
 
   if (error) {
-    throw new Error(error.message);
+    console.error("[setPlaceStatus] supabase error:", error);
+    throw new Error(`فشل تحديث الحالة: ${error.message}`);
   }
   revalidatePath("/dashboard/places");
 }
