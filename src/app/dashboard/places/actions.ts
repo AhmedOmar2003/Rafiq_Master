@@ -96,30 +96,26 @@ export async function setPlaceStatus(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  // Migration 0030 relaxes the places guard trigger so connections
-  // authenticated as `service_role` are accepted as moderators. The admin
-  // client uses service_role, so this direct UPDATE is now legitimate and
-  // simpler than the RPC indirection the previous build tried (and broke).
-  const patch = {
-    status,
-    rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
-    approved_at: status === "approved" ? new Date().toISOString() : null,
-    suspended_at: status === "suspended" ? new Date().toISOString() : null,
-    updated_at: new Date().toISOString(),
-  };
+  // The places guard trigger blocks direct writes to moderation columns.
+  // We go through the SECURITY DEFINER RPC from migration 0029 so the DB
+  // itself applies the change and emits the moderation_history row.
+  const rpc = supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ error: { message: string; code?: string } | null }>;
 
-  // Log inputs so a future Vercel error surfaces the row we tried to touch.
-  // The 500 swallows our throw() in production; this is the cheapest way to
-  // get visibility back.
-  console.log("[setPlaceStatus]", { placeId, status });
-
-  const { error } = await supabase
-    .from("places")
-    .update(patch as never)
-    .eq("place_id", placeId);
+  const { error } = await rpc("admin_set_place_status", {
+    _place_id: placeId,
+    _status: status,
+    _rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
+  });
 
   if (error) {
-    console.error("[setPlaceStatus] supabase error:", error);
+    if (error.code === "42883") {
+      throw new Error(
+        "تعذر تعديل الحالة: دالة admin_set_place_status غير موجودة في قاعدة البيانات بعد. طبّق migration 0029_admin_set_place_status_rpc.sql أولًا.",
+      );
+    }
     throw new Error(`فشل تحديث الحالة: ${error.message}`);
   }
   revalidatePath("/dashboard/places");
