@@ -96,24 +96,23 @@ export async function setPlaceStatus(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  // The places guard trigger (migration 0010) blocks status writes unless
-  // `auth.uid()` resolves to a moderator. The dashboard hits Postgres with
-  // the service_role key (no JWT), so a direct UPDATE would raise
-  // "only moderators can change moderation columns". The dedicated SECURITY
-  // DEFINER RPC in migration 0029 sidesteps the trigger cleanly and writes
-  // the matching moderation_history audit row.
-  // Supabase's generated types don't include this RPC yet, so we widen the
-  // client to skip the args-shape check. The runtime signature is enforced
-  // by the SECURITY DEFINER function on the DB side.
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ error: { message: string } | null }>;
-  const { error } = await rpc("admin_set_place_status", {
-    _place_id: placeId,
-    _status: status,
-    _rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
-  });
+  // Migration 0030 relaxes the places guard trigger to also accept connections
+  // authenticated as `service_role` — which is the role the admin client uses.
+  // That makes a direct UPDATE here legitimate again, no RPC needed. The
+  // trigger still rejects writes from regular authenticated users that aren't
+  // moderators, so the security surface is unchanged for clients.
+  const patch: Record<string, unknown> = {
+    status,
+    rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
+    approved_at: status === "approved" ? new Date().toISOString() : null,
+    suspended_at: status === "suspended" ? new Date().toISOString() : null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const placesTable = supabase.from("places") as ReturnType<
+    ReturnType<typeof createAdminClient>["from"]
+  >;
+  const { error } = await placesTable.update(patch).eq("place_id", placeId);
 
   if (error) {
     throw new Error(error.message);
