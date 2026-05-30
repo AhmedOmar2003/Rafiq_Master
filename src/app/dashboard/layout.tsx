@@ -4,19 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, MapPin, Star, Settings, LogOut,
-  Bell, Search, Menu, X, ChevronLeft, Store, CreditCard, Gavel,
+  LayoutDashboard, Users, MapPin, Star, Settings, LogOut, Activity,
+  Bell, Search, Menu, X, ChevronLeft, Store, CreditCard, Gavel, ShieldAlert,
 } from "lucide-react";
 import styles from "./layout.module.css";
 import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { name: "نظرة عامة",      href: "/dashboard",               icon: LayoutDashboard, desc: "الإحصائيات" },
+  { name: "النشاط",          href: "/dashboard/activity",      icon: Activity,        desc: "كل اللي بيحصل" },
   { name: "المستخدمون",     href: "/dashboard/users",         icon: Users,           desc: "إدارة الحسابات" },
   { name: "مقدّمو الخدمة",  href: "/dashboard/providers",     icon: Store,           desc: "أصحاب الأنشطة" },
   { name: "الاشتراكات",     href: "/dashboard/subscriptions", icon: CreditCard,      desc: "خطط الباقات والإيراد" },
   { name: "الأماكن",        href: "/dashboard/places",        icon: MapPin,          desc: "إدارة الأماكن" },
   { name: "الطعون",         href: "/dashboard/appeals",       icon: Gavel,           desc: "اعتراضات مقدّمي الخدمة" },
+  { name: "البلاغات",        href: "/dashboard/reports",       icon: ShieldAlert,     desc: "بلاغات المستخدمين" },
   { name: "التقييمات",      href: "/dashboard/reviews",       icon: Star,            desc: "المراجعات" },
   { name: "الإعدادات",      href: "/dashboard/settings",      icon: Settings,        desc: "إعدادات التطبيق" },
 ];

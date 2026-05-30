@@ -22,6 +22,7 @@ import {
   Banknote,
 } from "lucide-react";
 import { format } from "date-fns";
+import GrowthChart from "./GrowthChart";
 
 export const metadata = {
   title: "نظرة عامة - رفيق",
@@ -79,8 +80,8 @@ export default async function DashboardOverview() {
       .select("place_id, place_name, city_name, activity_name, rating")
       .order("rating", { ascending: false })
       .limit(5),
-    // City distribution
-    supabase.from("places").select("city_name").limit(1000),
+    // City distribution + creation timestamps for the 14-day growth chart.
+    supabase.from("places").select("city_name, created_at").limit(2000),
     // Activity distribution
     supabase.from("places").select("activity_name").limit(1000),
     // Providers total — every business row (incl. ones that bailed before
@@ -118,13 +119,43 @@ export default async function DashboardOverview() {
 
   // Build city distribution map
   const cityMap: Record<string, number> = {};
-  (cityStatsData ?? []).forEach((p: { city_name: string }) => {
+  (cityStatsData ?? []).forEach((p: { city_name: string; created_at?: string }) => {
     cityMap[p.city_name] = (cityMap[p.city_name] || 0) + 1;
   });
   const cityStats = Object.entries(cityMap)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
   const maxCityCount = cityStats[0]?.[1] || 1;
+
+  // ── 14-day growth series ─────────────────────────────────────────────
+  // Buckets users + places by created_at day so we can render a single
+  // line chart with two series. Days with no rows still appear (count=0)
+  // so the chart never has gaps.
+  const days = 14;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayKeys: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    dayKeys.push(d.toISOString().slice(0, 10));
+  }
+  const seedZero = () => Object.fromEntries(dayKeys.map((k) => [k, 0]));
+  const usersByDay: Record<string, number> = seedZero();
+  const placesByDay: Record<string, number> = seedZero();
+  (authUsers?.users ?? []).forEach((u) => {
+    const key = u.created_at?.slice(0, 10);
+    if (key && key in usersByDay) usersByDay[key]++;
+  });
+  (cityStatsData ?? []).forEach((p: { created_at?: string }) => {
+    const key = p.created_at?.slice(0, 10);
+    if (key && key in placesByDay) placesByDay[key]++;
+  });
+  const growthSeries = dayKeys.map((key) => ({
+    day: key.slice(5), // MM-DD
+    users: usersByDay[key],
+    places: placesByDay[key],
+  }));
 
   // Build activity distribution map
   const activityMap: Record<string, number> = {};
@@ -342,6 +373,9 @@ export default async function DashboardOverview() {
           </div>
         </div>
       </div>
+
+      {/* ── 14-day growth chart ── */}
+      <GrowthChart series={growthSeries} />
 
       {/* ── Main Grid ── */}
       <div className={styles.mainGrid}>
