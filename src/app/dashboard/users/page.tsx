@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type AdminRoleRow = { user_id: string; role: "admin" | "super_admin" };
-type UserRoleRow = { user_id: string; role: string; revoked_at: string | null };
+type ProviderOwnerRow = { owner_id: string };
 
 export default async function UsersPage() {
   const supabase = createAdminClient();
@@ -17,17 +17,23 @@ export default async function UsersPage() {
   // Three parallel reads:
   //   - auth.users      → the canonical account list (email, created_at, metadata)
   //   - admin_roles     → dashboard moderation roles (admin / super_admin)
-  //   - user_roles      → app-level RBAC. We look up `provider` here so the
-  //                        admin can tell apart paying business owners from
-  //                        consumer accounts at a glance.
+  //   - providers       → AUTHORITATIVE provider list. The `user_roles` table
+  //                        gets a 'provider' entry the moment somebody taps
+  //                        "Become a provider", but that doesn't mean they
+  //                        actually finished onboarding. The `providers` row
+  //                        only exists after `become_provider()` succeeded
+  //                        AND the user committed a business name, so it's
+  //                        the single source of truth the admin should see.
+  //                        A "regular user" is just an authenticated account
+  //                        with NO providers row.
   const [
     { data: authUsers, error },
     { data: adminRoles },
-    { data: userRoles },
+    { data: providerRows },
   ] = await Promise.all([
     supabase.auth.admin.listUsers(),
     supabase.from("admin_roles").select("user_id, role"),
-    supabase.from("user_roles").select("user_id, role, revoked_at"),
+    supabase.from("providers").select("owner_id"),
   ]);
 
   if (error) {
@@ -44,9 +50,7 @@ export default async function UsersPage() {
     ((adminRoles ?? []) as AdminRoleRow[]).map((r) => [r.user_id, r.role])
   );
   const providerSet = new Set(
-    ((userRoles ?? []) as UserRoleRow[])
-      .filter((r) => r.role === "provider" && r.revoked_at === null)
-      .map((r) => r.user_id)
+    ((providerRows ?? []) as ProviderOwnerRow[]).map((r) => r.owner_id)
   );
 
   const users = (authUsers?.users ?? []).map((u) => ({
@@ -61,6 +65,7 @@ export default async function UsersPage() {
   const total = users.length;
   const admins = users.filter((u) => u.role).length;
   const providers = users.filter((u) => u.isProvider).length;
+  const regular = users.filter((u) => !u.isProvider && !u.role).length;
   const thisMonth = users.filter((u) => {
     const d = new Date(u.created_at);
     const now = new Date();
@@ -109,6 +114,15 @@ export default async function UsersPage() {
           <div className={s.statBody}>
             <div className={s.statValue}>{providers}</div>
             <div className={s.statLabel}>مقدّمو الخدمة</div>
+          </div>
+        </div>
+        <div className={s.statCard}>
+          <div className={s.statIcon} style={{ background: "rgba(20,184,166,0.12)", color: "#0d9488" }}>
+            <UserCheck size={22} />
+          </div>
+          <div className={s.statBody}>
+            <div className={s.statValue}>{regular}</div>
+            <div className={s.statLabel}>مستخدم عادي</div>
           </div>
         </div>
         <div className={s.statCard}>
