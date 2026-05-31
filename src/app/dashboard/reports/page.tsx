@@ -25,7 +25,7 @@ type RawReport = {
 export default async function ReportsPage() {
   const supabase = createAdminClient();
 
-  const [reportsRes, placesRes, dirRes] = await Promise.allSettled([
+  const [reportsRes, placesRes, dirRes, providerRowsRes, subsRes] = await Promise.allSettled([
     supabase
       .from("moderation_reports")
       .select("id,reporter_id,target_type,target_id,reason_code,details,status,resolution_note,resolved_at,created_at")
@@ -33,6 +33,11 @@ export default async function ReportsPage() {
       .limit(500),
     supabase.from("places").select("id,place_name"),
     getProfileDirectory(),
+    supabase.from("providers").select("id, owner_id"),
+    supabase
+      .from("provider_subscriptions")
+      .select("provider_id")
+      .in("status", ["active", "trialing", "past_due"]),
   ]);
 
   const rawReports =
@@ -46,15 +51,41 @@ export default async function ReportsPage() {
   }
 
   const userByUuid = new Map<string, string>();
+  const emailByUuid = new Map<string, string | null>();
   if (dirRes.status === "fulfilled") {
     for (const [id, u] of dirRes.value) {
       userByUuid.set(id, u.fullName ?? u.email?.split("@")[0] ?? "مستخدم");
+      emailByUuid.set(id, u.email);
     }
   }
+
+  const activeProviderIds = new Set(
+    subsRes.status === "fulfilled"
+      ? ((subsRes.value.data ?? []) as { provider_id: string }[]).map(
+          (row) => row.provider_id,
+        )
+      : [],
+  );
+  const providerOwnerIds = new Set(
+    providerRowsRes.status === "fulfilled"
+      ? ((providerRowsRes.value.data ?? []) as {
+          id: string;
+          owner_id: string | null;
+        }[])
+          .filter((row) => row.owner_id && activeProviderIds.has(row.id))
+          .map((row) => row.owner_id as string)
+      : [],
+  );
 
   const reports: ReportRow[] = (rawReports as RawReport[]).map((r) => ({
     id: r.id,
     reporterName: r.reporter_id ? userByUuid.get(r.reporter_id) ?? "مستخدم" : "—",
+    reporterEmail: r.reporter_id ? emailByUuid.get(r.reporter_id) ?? null : null,
+    reporterKind: r.reporter_id
+      ? providerOwnerIds.has(r.reporter_id)
+        ? "provider_user"
+        : "regular_user"
+      : "unknown",
     targetType: r.target_type,
     targetId: r.target_id,
     targetName:

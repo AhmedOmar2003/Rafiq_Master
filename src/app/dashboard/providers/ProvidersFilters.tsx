@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { format } from "date-fns";
 import {
   Search,
@@ -12,6 +12,7 @@ import {
   MapPin,
   Crown,
   CalendarDays,
+  Trash2,
 } from "lucide-react";
 import s from "../shared.module.css";
 
@@ -69,14 +70,19 @@ const STATUS_LABEL: Record<ProviderRow["status"], string> = {
 
 export default function ProvidersFilters({
   providers,
+  canDelete,
+  deleteAction,
 }: {
   providers: ProviderRow[];
+  canDelete: boolean;
+  deleteAction: (userId: string) => Promise<void>;
 }) {
   const [search, setSearch] = useState("");
   const [tier, setTier] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [tierOpen, setTierOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -98,6 +104,18 @@ export default function ProvidersFilters({
     setSearch("");
     setTier("all");
     setStatus("all");
+  }
+
+  function handleDelete(provider: ProviderRow) {
+    if (!provider.ownerId) return;
+    const ok = window.confirm(
+      `سيتم حذف مقدم الخدمة "${provider.businessName}" نهائيًا مع حسابه وكل بياناته وأماكنه واشتراكاته. لا يمكن التراجع. هل تريد المتابعة؟`,
+    );
+    if (!ok) return;
+
+    startTransition(async () => {
+      await deleteAction(provider.ownerId!);
+    });
   }
 
   return (
@@ -200,12 +218,13 @@ export default function ProvidersFilters({
               <th>الحالة</th>
               <th>الأماكن</th>
               <th>تاريخ الانضمام</th>
+              {canDelete && <th>إجراء</th>}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={canDelete ? 7 : 6}>
                   <div className={s.emptyState}>
                     <div className={s.emptyStateIcon}>
                       <Store size={26} />
@@ -284,20 +303,37 @@ export default function ProvidersFilters({
                       {p.placeCount}
                     </span>
                   </td>
-                  <td dir="ltr">
-                    <span
-                      style={{
+                    <td dir="ltr">
+                      <span
+                        style={{
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 6,
                       }}
-                    >
-                      <CalendarDays size={13} style={{ color: "var(--color-gray)" }} />
-                      {format(new Date(p.createdAt), "dd/MM/yyyy")}
-                    </span>
-                  </td>
-                </tr>
-              ))
+                      >
+                        <CalendarDays size={13} style={{ color: "var(--color-gray)" }} />
+                        {format(new Date(p.createdAt), "dd/MM/yyyy")}
+                      </span>
+                    </td>
+                    {canDelete && (
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(p)}
+                          disabled={isPending || !p.ownerId}
+                          className={s.clearAllBtn}
+                          style={{
+                            borderColor: "rgba(220,38,38,0.24)",
+                            color: "#dc2626",
+                          }}
+                        >
+                          <Trash2 size={13} />
+                          حذف نهائي
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))
             )}
           </tbody>
         </table>

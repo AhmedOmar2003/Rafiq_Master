@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createSsrClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { currentAdminRole } from "@/lib/auth/role";
 
@@ -150,10 +151,42 @@ export async function deleteUser(userId: string): Promise<void> {
   if ((await currentAdminRole()) !== "super_admin") {
     throw new Error("صلاحية غير كافية");
   }
+
   const supabase = createAdminClient();
+  const sessionClient = await createSsrClient();
+  const {
+    data: { user: currentUser },
+  } = await sessionClient.auth.getUser();
+
+  if (currentUser?.id === userId) {
+    throw new Error("لا يمكنك حذف حسابك الحالي من لوحة التحكم");
+  }
+
+  const { data: adminRoleRow } = await supabase
+    .from("admin_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const targetAdminRole = (adminRoleRow as { role: "admin" | "super_admin" } | null)?.role;
+  if (targetAdminRole === "super_admin") {
+    const { count, error: countError } = await supabase
+      .from("admin_roles")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "super_admin");
+
+    if (countError) {
+      throw new Error(`تعذر التحقق من عدد المشرفين الأعلى: ${countError.message}`);
+    }
+    if ((count ?? 0) <= 1) {
+      throw new Error("لا يمكن حذف آخر مشرف أعلى في النظام");
+    }
+  }
+
   const { error } = await supabase.auth.admin.deleteUser(userId);
   if (error) throw new Error(`فشل حذف الحساب: ${error.message}`);
 
   revalidatePath("/dashboard/users");
   revalidatePath("/dashboard/providers");
+  revalidatePath("/dashboard/reports");
 }

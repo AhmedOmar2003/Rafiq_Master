@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import { Search, X, ChevronDown, Users, Shield, User, Store } from "lucide-react";
+import { useState, useMemo, useRef, useEffect, useTransition } from "react";
+import { Search, X, ChevronDown, Users, Shield, User, Store, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import s from "../shared.module.css";
 import ls from "./users.module.css";
@@ -28,11 +28,18 @@ const AVATAR_COLORS = [
   "#ec4899", "#6366f1", "#14b8a6",
 ];
 
-export default function UsersFilters({ users }: { users: UserRow[] }) {
+export default function UsersFilters({
+  users,
+  deleteAction,
+}: {
+  users: UserRow[];
+  deleteAction: (userId: string) => Promise<void>;
+}) {
   const [search, setSearch] = useState("");
   const [showSugg, setShowSugg] = useState(false);
   const [roleFilter, setRoleFilter] = useState("all");
   const [roleOpen, setRoleOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const searchRef = useRef<HTMLDivElement>(null);
   const roleRef = useRef<HTMLDivElement>(null);
@@ -104,6 +111,18 @@ export default function UsersFilters({ users }: { users: UserRow[] }) {
   // We render it as a separate chip next to the moderation badge so the admin
   // sees both facts without one masking the other.
   const providerChipCls = `${s.badge} ${s.badgePurple}`;
+
+  function handleDelete(user: UserRow, name: string) {
+    if (user.role) return;
+    const ok = window.confirm(
+      `سيتم حذف الحساب نهائيًا للمستخدم "${name}" مع كل بياناته المرتبطة. لا يمكن التراجع. هل تريد المتابعة؟`,
+    );
+    if (!ok) return;
+
+    startTransition(async () => {
+      await deleteAction(user.id);
+    });
+  }
 
   const roleLabel =
     ROLE_OPTIONS.find((o) => o.value === roleFilter)?.label || "الدور";
@@ -185,12 +204,13 @@ export default function UsersFilters({ users }: { users: UserRow[] }) {
               <th>البريد الإلكتروني</th>
               <th>تاريخ التسجيل</th>
               <th>الدور</th>
+              <th>إجراء</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <div className={s.emptyState}>
                     <div className={s.emptyStateIcon}><Users size={26} /></div>
                     <span className={s.emptyStateTitle}>لا يوجد مستخدمون مطابقون</span>
@@ -203,6 +223,7 @@ export default function UsersFilters({ users }: { users: UserRow[] }) {
                 const name = getName(user);
                 const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
                 const roleInfo = getRoleInfo(user.role);
+                const canDelete = !user.role;
                 return (
                   <tr key={user.id}>
                     <td>
@@ -238,6 +259,25 @@ export default function UsersFilters({ users }: { users: UserRow[] }) {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td>
+                      {canDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(user, name)}
+                          disabled={isPending}
+                          className={s.clearAllBtn}
+                          style={{
+                            borderColor: "rgba(220,38,38,0.24)",
+                            color: "#dc2626",
+                          }}
+                        >
+                          <Trash2 size={13} />
+                          حذف نهائي
+                        </button>
+                      ) : (
+                        <span className={`${s.badge} ${s.badgeGray}`}>محمي</span>
+                      )}
                     </td>
                   </tr>
                 );

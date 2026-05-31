@@ -5,6 +5,7 @@ import UsersFilters from "./UsersFilters";
 import AddUserButton from "./AddUserButton";
 import { requireSuperAdmin } from "@/lib/auth/role";
 import { listAllAuthUsers } from "@/lib/admin/users";
+import { deleteUser } from "./actions";
 
 export const metadata = { title: "إدارة المستخدمين - رفيق" };
 
@@ -147,7 +148,7 @@ export default async function UsersPage() {
       </div>
 
       {/* Filters + Table */}
-      <UsersFilters users={users} />
+      <UsersFilters users={users} deleteAction={deleteUser} />
     </div>
   );
 }

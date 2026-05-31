@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { format } from "date-fns";
 import {
-  Search, X, ChevronDown, ShieldAlert, MapPin, User, Hourglass,
+  Search, X, ChevronDown, ShieldAlert, MapPin, User, Mail, Hourglass,
   CheckCircle2, XCircle, ChevronRight, AlertCircle, Eye,
 } from "lucide-react";
 import s from "../shared.module.css";
@@ -13,6 +13,8 @@ export type ReportStatus = "open" | "reviewed" | "actioned" | "dismissed";
 export type ReportRow = {
   id: string;
   reporterName: string;
+  reporterEmail: string | null;
+  reporterKind: "regular_user" | "provider_user" | "unknown";
   targetType: "place" | "review" | "provider" | "user";
   targetId: string;
   targetName: string;
@@ -47,6 +49,12 @@ const STATUS_CFG: Record<ReportStatus, { label: string; color: string; bg: strin
   reviewed:  { label: "تمت المراجعة",     color: "#2563eb", bg: "rgba(37,99,235,0.10)" },
   actioned:  { label: "تم اتخاذ إجراء",   color: "#16a34a", bg: "rgba(22,163,74,0.10)" },
   dismissed: { label: "مرفوض",             color: "#6b7280", bg: "rgba(107,114,128,0.10)" },
+};
+
+const REPORTER_KIND_LABEL: Record<ReportRow["reporterKind"], string> = {
+  regular_user: "مستخدم عادي",
+  provider_user: "مستخدم + مقدم خدمة",
+  unknown: "غير معروف",
 };
 
 export default function ReportsList({
@@ -174,6 +182,14 @@ export default function ReportsList({
                       display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap",
                     }}>
                       <User size={12} /> {r.reporterName}
+                      {r.reporterEmail && (
+                        <>
+                          <span style={{ opacity: 0.5 }}>·</span>
+                          <span dir="ltr">{r.reporterEmail}</span>
+                        </>
+                      )}
+                      <span style={{ opacity: 0.5 }}>·</span>
+                      {REPORTER_KIND_LABEL[r.reporterKind]}
                       <span style={{ opacity: 0.5 }}>·</span>
                       {r.targetType === "place" ? <MapPin size={12} /> : <AlertCircle size={12} />}
                       {r.targetName}
@@ -197,6 +213,73 @@ export default function ReportsList({
                     padding: "1.25rem",
                     display: "flex", flexDirection: "column", gap: "1rem",
                   }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: "0.75rem",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                      }}
+                    >
+                      <div
+                        style={{
+                          background: "var(--color-background)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "var(--radius-md)",
+                          padding: "0.85rem 1rem",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "0.78rem",
+                            fontWeight: 700,
+                            color: "var(--color-text-tertiary)",
+                            marginBottom: 6,
+                          }}
+                        >
+                          المبلّغ
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <User size={13} />
+                            {r.reporterName}
+                          </span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <Mail size={13} />
+                            <span dir="ltr">{r.reporterEmail ?? "لا يوجد إيميل ظاهر"}</span>
+                          </span>
+                          <span className={s.badge} style={{ width: "fit-content" }}>
+                            {REPORTER_KIND_LABEL[r.reporterKind]}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          background: "var(--color-background)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "var(--radius-md)",
+                          padding: "0.85rem 1rem",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "0.78rem",
+                            fontWeight: 700,
+                            color: "var(--color-text-tertiary)",
+                            marginBottom: 6,
+                          }}
+                        >
+                          العنصر المُبلّغ عنه
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <span>{r.targetName}</span>
+                          <span style={{ color: "var(--color-text-tertiary)", fontSize: "0.82rem" }}>
+                            النوع: {r.targetType}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
                     {r.details && (
                       <div>
                         <div style={{

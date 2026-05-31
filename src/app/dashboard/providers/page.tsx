@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Store, Crown, Sparkles, Hourglass, CheckCircle2 } from "lucide-react";
 import s from "../shared.module.css";
 import ProvidersFilters, { type ProviderRow } from "./ProvidersFilters";
+import { currentAdminRole } from "@/lib/auth/role";
+import { deleteUser } from "../users/actions";
 
 export const metadata = { title: "مقدّمو الخدمة - رفيق" };
 
@@ -54,6 +56,7 @@ function deriveProviderDashboardStatus(
  *   moderation. Place moderation belongs on `/dashboard/places`.
  */
 export default async function ProvidersPage() {
+  const role = await currentAdminRole();
   const supabase = createAdminClient();
 
   const [
@@ -213,7 +216,11 @@ export default async function ProvidersPage() {
         </div>
       </div>
 
-      <ProvidersFilters providers={providers} />
+      <ProvidersFilters
+        providers={providers}
+        canDelete={role === "super_admin"}
+        deleteAction={deleteUser}
+      />
     </div>
   );
 }
