@@ -4,6 +4,7 @@ import { Plus, MapPin, Star, Trophy, Hourglass, CheckCircle2 } from "lucide-reac
 import s from "../shared.module.css";
 import PlacesFilters from "./PlacesFilters";
 import { deletePlace, setPlaceStatus, setPlaceEditAllowed } from "./actions";
+import { getProfileDirectory } from "@/lib/admin/users";
 
 export const metadata = { title: "إدارة الأماكن - رفيق" };
 
@@ -41,7 +42,7 @@ export default async function PlacesPage() {
   // bad column rename), the page should still render the core places table.
   // We log the per-source error so it surfaces in Vercel logs instead of
   // showing the user a black 500 page.
-  const [placesResult, totalResult, providersResult, authResult] =
+  const [placesResult, totalResult, providersResult, dirResult] =
     await Promise.allSettled([
       supabase
         .from("places")
@@ -54,7 +55,8 @@ export default async function PlacesPage() {
       supabase
         .from("providers")
         .select("id,owner_id,business_name,contact_email"),
-      supabase.auth.admin.listUsers(),
+      // Indexed profiles directory instead of the unpaginated auth API.
+      getProfileDirectory(),
     ]);
 
   function unwrap<T>(
@@ -82,19 +84,14 @@ export default async function PlacesPage() {
     console.error("[PlacesPage] total count rejected:", totalResult.reason);
   }
 
-  // auth.admin.listUsers returns { data: { users: [...] }, error }; we only
-  // need the users array. Failure here is non-fatal — owner emails just go
-  // null and the OwnerCell falls back to the business name.
-  type AuthUser = { id: string; email?: string; user_metadata?: unknown };
-  let authUsers: AuthUser[] = [];
-  if (authResult.status === "fulfilled") {
-    const data = authResult.value.data as unknown as { users?: AuthUser[] };
-    authUsers = data?.users ?? [];
-    if (authResult.value.error) {
-      console.error("[PlacesPage] listUsers error:", authResult.value.error);
-    }
+  // Profiles directory (id → name/email). Failure here is non-fatal — owner
+  // emails just go null and the OwnerCell falls back to the business name.
+  type DirUser = { email: string | null; fullName: string | null };
+  let ownerDirectory = new Map<string, DirUser>();
+  if (dirResult.status === "fulfilled") {
+    ownerDirectory = dirResult.value as Map<string, DirUser>;
   } else {
-    console.error("[PlacesPage] listUsers rejected:", authResult.reason);
+    console.error("[PlacesPage] profile directory rejected:", dirResult.reason);
   }
 
   const rawRows = (places ?? []) as RawPlaceRow[];
@@ -106,11 +103,10 @@ export default async function PlacesPage() {
     providerById.set(p.id, p);
   }
   const ownerById = new Map<string, { email?: string; name?: string }>();
-  for (const u of authUsers) {
-    const meta = (u.user_metadata ?? {}) as { full_name?: string; name?: string };
-    ownerById.set(u.id, {
-      email: u.email,
-      name: meta.full_name ?? meta.name,
+  for (const [id, u] of ownerDirectory) {
+    ownerById.set(id, {
+      email: u.email ?? undefined,
+      name: u.fullName ?? undefined,
     });
   }
 

@@ -20,14 +20,16 @@ export default async function SettingsPage() {
   const [
     { count: placesCount },
     { count: reviewsCount },
-    { data: authUsers },
+    { count: profilesCount },
   ] = await Promise.all([
     supabase.from("places").select("*", { count: "exact", head: true }),
     supabase.from("reviews").select("*", { count: "exact", head: true }),
-    supabase.auth.admin.listUsers(),
+    // head-only count is O(1)-ish and avoids pulling every row just to
+    // show a number on the settings card.
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
   ]);
 
-  const usersCount = authUsers?.users.length ?? 0;
+  const usersCount = profilesCount ?? 0;
 
   return (
     <div className={s.page}>

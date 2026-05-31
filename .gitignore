@@ -33,3 +33,4 @@ yarn-error.log*
 public/app/
 public/*.map
 public/*.symbols
+.vercel

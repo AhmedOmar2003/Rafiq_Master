@@ -3,6 +3,7 @@ import { ShieldAlert, Hourglass, CheckCircle2, XCircle } from "lucide-react";
 import s from "../shared.module.css";
 import ReportsList, { type ReportRow } from "./ReportsList";
 import { setReportStatus } from "./actions";
+import { getProfileDirectory } from "@/lib/admin/users";
 
 export const metadata = { title: "البلاغات - رفيق" };
 export const dynamic = "force-dynamic";
@@ -24,14 +25,14 @@ type RawReport = {
 export default async function ReportsPage() {
   const supabase = createAdminClient();
 
-  const [reportsRes, placesRes, authUsersRes] = await Promise.allSettled([
+  const [reportsRes, placesRes, dirRes] = await Promise.allSettled([
     supabase
       .from("moderation_reports")
       .select("id,reporter_id,target_type,target_id,reason_code,details,status,resolution_note,resolved_at,created_at")
       .order("created_at", { ascending: false })
       .limit(500),
     supabase.from("places").select("id,place_name"),
-    supabase.auth.admin.listUsers(),
+    getProfileDirectory(),
   ]);
 
   const rawReports =
@@ -45,13 +46,9 @@ export default async function ReportsPage() {
   }
 
   const userByUuid = new Map<string, string>();
-  if (authUsersRes.status === "fulfilled") {
-    for (const u of authUsersRes.value.data?.users ?? []) {
-      const meta = (u.user_metadata ?? {}) as { full_name?: string; name?: string };
-      userByUuid.set(
-        u.id,
-        meta.full_name ?? meta.name ?? u.email?.split("@")[0] ?? "مستخدم",
-      );
+  if (dirRes.status === "fulfilled") {
+    for (const [id, u] of dirRes.value) {
+      userByUuid.set(id, u.fullName ?? u.email?.split("@")[0] ?? "مستخدم");
     }
   }
 

@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getProfileDirectory } from "@/lib/admin/users";
 import {
   Activity, CheckCircle2, XCircle, Hourglass, CreditCard, UserPlus,
   Store, Gavel, MapPin, Trash2,
@@ -59,14 +60,14 @@ export default async function ActivityPage() {
   const supabase = createAdminClient();
 
   const [
-    { data: authUsers },
+    userDirectory,
     { data: modRows },
     { data: subRows },
     { data: appealRows },
     { data: providerRows },
     { data: placeRows },
   ] = await Promise.all([
-    supabase.auth.admin.listUsers(),
+    getProfileDirectory(),
     supabase
       .from("moderation_history")
       .select("id,target_type,target_id,action,from_status,to_status,actor_id,reason,created_at")
@@ -95,12 +96,11 @@ export default async function ActivityPage() {
     placeByUuid.set(p.id, p.place_name ?? "—");
   }
   const profileById = new Map<string, ProfileRow>();
-  for (const u of authUsers?.users ?? []) {
-    const meta = (u.user_metadata ?? {}) as { full_name?: string; name?: string };
-    profileById.set(u.id, {
-      id: u.id,
-      full_name: meta.full_name ?? meta.name ?? u.email?.split("@")[0] ?? null,
-      created_at: u.created_at,
+  for (const [id, u] of userDirectory) {
+    profileById.set(id, {
+      id,
+      full_name: u.fullName ?? u.email?.split("@")[0] ?? null,
+      created_at: u.createdAt,
     });
   }
 
@@ -151,16 +151,18 @@ export default async function ActivityPage() {
     });
   }
 
-  // ── user signups ──
-  for (const u of (authUsers?.users ?? []).slice(0, 100)) {
-    const meta = (u.user_metadata ?? {}) as { full_name?: string; name?: string };
-    const name = meta.full_name ?? meta.name ?? u.email?.split("@")[0] ?? "مستخدم جديد";
+  // ── user signups ── (most recent 100 from the directory)
+  const recentSignups = [...userDirectory.values()]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 100);
+  for (const u of recentSignups) {
+    const name = u.fullName ?? u.email?.split("@")[0] ?? "مستخدم جديد";
     events.push({
       id: `signup:${u.id}`,
       kind: "signup",
       title: `تسجيل جديد: ${name}`,
       subtitle: u.email ?? undefined,
-      createdAt: u.created_at,
+      createdAt: u.createdAt,
     });
   }
 

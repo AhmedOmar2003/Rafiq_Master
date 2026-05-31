@@ -4,6 +4,7 @@ import s from "../shared.module.css";
 import UsersFilters from "./UsersFilters";
 import AddUserButton from "./AddUserButton";
 import { requireSuperAdmin } from "@/lib/auth/role";
+import { listAllAuthUsers } from "@/lib/admin/users";
 
 export const metadata = { title: "إدارة المستخدمين - رفيق" };
 
@@ -32,12 +33,13 @@ export default async function UsersPage() {
   //                  onboarding then bailed at the plan screen) — that
   //                  still doesn't count as a provider.
   const [
-    { data: authUsers, error },
+    authUsers,
     { data: adminRoles },
     { data: providerRows },
     { data: subRows },
   ] = await Promise.all([
-    supabase.auth.admin.listUsers(),
+    // Paginated roster — every account, not just the first 50.
+    listAllAuthUsers(),
     supabase.from("admin_roles").select("user_id, role"),
     supabase.from("providers").select("id, owner_id"),
     supabase
@@ -45,16 +47,6 @@ export default async function UsersPage() {
       .select("provider_id")
       .in("status", ["active", "trialing", "past_due"]),
   ]);
-
-  if (error) {
-    return (
-      <div className={s.page}>
-        <p style={{ color: "var(--color-danger)" }}>
-          تعذر تحميل المستخدمين: {error.message}
-        </p>
-      </div>
-    );
-  }
 
   const adminMap = new Map(
     ((adminRoles ?? []) as AdminRoleRow[]).map((r) => [r.user_id, r.role])
@@ -68,11 +60,11 @@ export default async function UsersPage() {
       .map((p) => p.owner_id)
   );
 
-  const users = (authUsers?.users ?? []).map((u) => ({
+  const users = authUsers.map((u) => ({
     id: u.id,
-    email: u.email,
-    created_at: u.created_at,
-    user_metadata: u.user_metadata as { full_name?: string; name?: string },
+    email: u.email ?? undefined,
+    created_at: u.createdAt,
+    user_metadata: { full_name: u.fullName ?? undefined },
     role: adminMap.get(u.id) ?? null,
     isProvider: providerSet.has(u.id),
   }));

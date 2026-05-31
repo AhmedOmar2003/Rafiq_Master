@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import GrowthChart from "./GrowthChart";
+import { listAllAuthUsers } from "@/lib/admin/users";
 
 export const metadata = {
   title: "نظرة عامة - رفيق",
@@ -53,7 +54,7 @@ export default async function DashboardOverview() {
   const supabase = createAdminClient();
 
   const [
-    { data: authUsers },
+    allUsers,
     { count: placesCount },
     { count: reviewsCount },
     { data: reviewsData },
@@ -65,7 +66,8 @@ export default async function DashboardOverview() {
     { data: subsData },
     { data: catalogRows },
   ] = await Promise.all([
-    supabase.auth.admin.listUsers(),
+    // Full paginated roster — accurate count + growth bucketing at any scale.
+    listAllAuthUsers(),
     supabase.from("places").select("*", { count: "exact", head: true }),
     supabase.from("reviews").select("*", { count: "exact", head: true }),
     supabase.from("reviews").select("rating").limit(1000),
@@ -103,8 +105,10 @@ export default async function DashboardOverview() {
       .select("tier, price_monthly_egp, price_yearly_egp"),
   ]);
 
-  const usersCount = authUsers?.users.length ?? 0;
-  const recentUsers = authUsers?.users.slice(0, 5) ?? [];
+  const usersCount = allUsers.length;
+  // allUsers is already sorted newest-first by listAllAuthUsers (auth API
+  // returns most-recent first per page).
+  const recentUsers = allUsers.slice(0, 5);
   const reviews = (reviewsData ?? []) as { rating: number | null }[];
   const recentPlaces = (recentPlacesData ?? []) as RecentPlaceRow[];
   const topPlaces = (topPlacesData ?? []) as PlaceWithReviews[];
@@ -143,8 +147,8 @@ export default async function DashboardOverview() {
   const seedZero = () => Object.fromEntries(dayKeys.map((k) => [k, 0]));
   const usersByDay: Record<string, number> = seedZero();
   const placesByDay: Record<string, number> = seedZero();
-  (authUsers?.users ?? []).forEach((u) => {
-    const key = u.created_at?.slice(0, 10);
+  allUsers.forEach((u) => {
+    const key = u.createdAt?.slice(0, 10);
     if (key && key in usersByDay) usersByDay[key]++;
   });
   (cityStatsData ?? []).forEach((p: { created_at?: string }) => {
@@ -498,13 +502,8 @@ export default async function DashboardOverview() {
               <div className={styles.emptyState}>لا يوجد مستخدمون</div>
             ) : (
               recentUsers.map((user, i) => {
-                const profile = user.user_metadata as {
-                  full_name?: string;
-                  name?: string;
-                };
                 const displayName =
-                  profile?.full_name ||
-                  profile?.name ||
+                  user.fullName ||
                   user.email?.split("@")[0] ||
                   "بدون اسم";
                 const avatarColors = [
@@ -525,7 +524,7 @@ export default async function DashboardOverview() {
                       <span className={styles.userEmail}>{user.email}</span>
                     </div>
                     <div className={styles.userDate}>
-                      {format(new Date(user.created_at), "MM/dd")}
+                      {format(new Date(user.createdAt), "MM/dd")}
                     </div>
                   </div>
                 );
