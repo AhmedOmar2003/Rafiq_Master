@@ -93,6 +93,12 @@ export async function setPlaceStatus(
   placeId: number,
   status: "pending" | "under_review" | "approved" | "rejected" | "suspended",
   rejectionReason?: string,
+  /**
+   * Only used when status === "rejected".
+   * - true  → provider gets an "edit & resubmit" button on the rejected card
+   * - false → provider can only appeal, the row stays locked for editing
+   */
+  allowEdit?: boolean,
 ): Promise<void> {
   const supabase = createAdminClient();
 
@@ -119,6 +125,10 @@ export async function setPlaceStatus(
     .update({
       status,
       rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
+      // edit_allowed is only meaningful while the place sits in 'rejected'.
+      // For any other status we reset it to false so a future rejection
+      // doesn't inherit a stale "true" from the past.
+      edit_allowed: status === "rejected" ? (allowEdit ?? false) : false,
       approved_at:
         status === "approved"
           ? new Date().toISOString()
@@ -133,6 +143,29 @@ export async function setPlaceStatus(
 
   if (error) {
     throw new Error(`فشل تحديث الحالة: ${error.message}`);
+  }
+  revalidatePath("/dashboard/places");
+}
+
+/**
+ * Flip the edit_allowed switch on a place that's already rejected, without
+ * changing the moderation status. Lets the admin reopen or re-lock edits
+ * after the initial decision (e.g. provider DMed asking for another chance).
+ */
+export async function setPlaceEditAllowed(
+  placeId: number,
+  allowed: boolean,
+): Promise<void> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("places")
+    .update({
+      edit_allowed: allowed,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq("place_id", placeId);
+  if (error) {
+    throw new Error(`فشل تعديل صلاحية التعديل: ${error.message}`);
   }
   revalidatePath("/dashboard/places");
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Plus, MapPin, Star, Trophy, Hourglass, CheckCircle2 } from "lucide-react";
 import s from "../shared.module.css";
 import PlacesFilters from "./PlacesFilters";
-import { deletePlace, setPlaceStatus } from "./actions";
+import { deletePlace, setPlaceStatus, setPlaceEditAllowed } from "./actions";
 
 export const metadata = { title: "إدارة الأماكن - رفيق" };
 
@@ -22,6 +22,7 @@ type RawPlaceRow = {
   created_at: string;
   rejection_reason: string | null;
   provider_id: string | null;
+  edit_allowed: boolean | null;
 };
 
 type ProviderInfoRow = {
@@ -45,7 +46,7 @@ export default async function PlacesPage() {
       supabase
         .from("places")
         .select(
-          "place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id",
+          "place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id,edit_allowed",
         )
         .order("created_at", { ascending: false })
         .limit(250),
@@ -208,6 +209,7 @@ export default async function PlacesPage() {
         places={placeRows}
         deleteAction={deletePlace}
         setStatusAction={setPlaceStatus}
+        setEditAllowedAction={setPlaceEditAllowed}
       />
     </div>
   );

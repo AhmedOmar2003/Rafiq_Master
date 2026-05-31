@@ -26,6 +26,9 @@ type PlaceRow = {
   owner_name?: string | null;
   /** When null the place was added by an admin from the dashboard. */
   provider_id?: string | null;
+  /** True when the admin opened the "edit & resubmit" door on a rejected
+   * place. Only meaningful while status === 'rejected'. */
+  edit_allowed?: boolean | null;
 };
 
 const SOURCE_OPTIONS = [
@@ -74,6 +77,7 @@ export default function PlacesFilters({
   places,
   deleteAction,
   setStatusAction,
+  setEditAllowedAction,
 }: {
   places: PlaceRow[];
   deleteAction: (id: number) => Promise<void>;
@@ -81,7 +85,10 @@ export default function PlacesFilters({
     id: number,
     status: PlaceStatus,
     rejectionReason?: string,
+    allowEdit?: boolean,
   ) => Promise<void>;
+  /** Flip the edit_allowed flag on a place that's already rejected. */
+  setEditAllowedAction?: (id: number, allowed: boolean) => Promise<void>;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -97,6 +104,12 @@ export default function PlacesFilters({
   // Rejection dialog — shown when the admin clicks ❌
   const [rejectTarget, setRejectTarget] = useState<PlaceRow | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  /**
+   * When true, the provider can edit + resubmit the rejected place. The
+   * admin opts in deliberately by checking the box in the reject dialog.
+   * Default false → admin must consciously open the door.
+   */
+  const [rejectAllowEdit, setRejectAllowEdit] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const searchRef = useRef<HTMLDivElement>(null);
@@ -445,12 +458,22 @@ export default function PlacesFilters({
                       </div>
                     </td>
                     <td>
-                      <StatusBadge status={place.status ?? "pending"} />
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <StatusBadge status={place.status ?? "pending"} />
+                        {place.status === "rejected" && setEditAllowedAction && (
+                          <EditAllowedToggle
+                            place={place}
+                            onChange={(allowed) =>
+                              setEditAllowedAction(place.place_id, allowed)
+                            }
+                          />
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div className={s.actionGroup}>
                         {setStatusAction && (place.status ?? "pending") !== "approved" && (
-                          <form action={setStatusAction.bind(null, place.place_id, "approved", undefined)}>
+                          <form action={setStatusAction.bind(null, place.place_id, "approved", undefined, undefined)}>
                             <button
                               type="submit"
                               className={`${s.actionBtn}`}
@@ -467,13 +490,17 @@ export default function PlacesFilters({
                             className={`${s.actionBtn}`}
                             style={{ background: "rgba(220,38,38,0.12)", color: "#dc2626" }}
                             title="رفض مع كتابة السبب"
-                            onClick={() => { setRejectTarget(place); setRejectReason(""); }}
+                            onClick={() => {
+                              setRejectTarget(place);
+                              setRejectReason("");
+                              setRejectAllowEdit(false);
+                            }}
                           >
                             <XCircle size={16} />
                           </button>
                         )}
                         {setStatusAction && (place.status ?? "pending") !== "pending" && (
-                          <form action={setStatusAction.bind(null, place.place_id, "pending", undefined)}>
+                          <form action={setStatusAction.bind(null, place.place_id, "pending", undefined, undefined)}>
                             <button
                               type="submit"
                               className={`${s.actionBtn}`}
@@ -592,6 +619,43 @@ export default function PlacesFilters({
               />
             </div>
 
+            {/* Allow-edit checkbox */}
+            <label
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "0.65rem",
+                padding: "0.85rem 1rem",
+                background: rejectAllowEdit ? "rgba(16,185,129,0.08)" : "var(--color-background, #f3f4f6)",
+                border: `1.5px solid ${rejectAllowEdit ? "rgba(16,185,129,0.5)" : "var(--color-border, #e5e7eb)"}`,
+                borderRadius: "var(--radius-md, 10px)",
+                cursor: "pointer",
+                transition: "background 0.15s, border-color 0.15s",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={rejectAllowEdit}
+                onChange={(e) => setRejectAllowEdit(e.target.checked)}
+                style={{
+                  marginTop: "2px",
+                  width: 18,
+                  height: 18,
+                  accentColor: "#10b981",
+                  cursor: "pointer",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontWeight: 800, fontSize: "0.88rem" }}>
+                  اسمحله يعدّل ويعيد الإرسال
+                </span>
+                <span style={{ fontSize: "0.78rem", color: "var(--color-text-tertiary, #6b7280)" }}>
+                  لو السبب بسيط (صور غير واضحة، وصف ناقص...) اسمح للمزوّد يعدّل
+                  ويرجّعه للمراجعة مرة تانية بدلاً من تقديم طعن كامل.
+                </span>
+              </div>
+            </label>
+
             {/* Actions */}
             <div style={{ display: "flex", gap: "0.75rem" }}>
               <button
@@ -612,10 +676,12 @@ export default function PlacesFilters({
                   if (!setStatusAction || !rejectReason.trim()) return;
                   const target = rejectTarget;
                   const reason = rejectReason.trim();
+                  const allowEdit = rejectAllowEdit;
                   startTransition(async () => {
-                    await setStatusAction(target.place_id, "rejected", reason);
+                    await setStatusAction(target.place_id, "rejected", reason, allowEdit);
                     setRejectTarget(null);
                     setRejectReason("");
+                    setRejectAllowEdit(false);
                   });
                 }}
                 style={{
@@ -808,5 +874,68 @@ function OwnerCell({
         )}
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// EditAllowedToggle — inline pill on rejected rows that lets the admin open
+// or close the "edit & resubmit" door without going through the reject
+// dialog again. Hidden for any non-rejected status because the flag is
+// meaningless outside of rejection.
+// ---------------------------------------------------------------------------
+function EditAllowedToggle({
+  place,
+  onChange,
+}: {
+  place: PlaceRow;
+  onChange: (allowed: boolean) => Promise<void>;
+}) {
+  const [allowed, setAllowed] = useState(!!place.edit_allowed);
+  const [busy, setBusy] = useState(false);
+
+  async function toggle() {
+    const next = !allowed;
+    setAllowed(next); // optimistic
+    setBusy(true);
+    try {
+      await onChange(next);
+    } catch {
+      // Revert on failure
+      setAllowed(!next);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={busy}
+      title={
+        allowed
+          ? "السماح بالتعديل مفتوح — اضغط للإغلاق"
+          : "اضغط للسماح للمزوّد بالتعديل وإعادة الإرسال"
+      }
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "0.25rem 0.55rem",
+        background: allowed
+          ? "rgba(16,185,129,0.12)"
+          : "var(--color-background, #f3f4f6)",
+        color: allowed ? "#10b981" : "var(--color-text-tertiary, #6b7280)",
+        border: `1px solid ${allowed ? "rgba(16,185,129,0.3)" : "var(--color-border, #e5e7eb)"}`,
+        borderRadius: 999,
+        cursor: busy ? "wait" : "pointer",
+        fontSize: "0.7rem",
+        fontWeight: 700,
+        width: "fit-content",
+        transition: "background 0.15s, color 0.15s",
+      }}
+    >
+      <Edit3 size={10} />
+      {allowed ? "تعديل مفتوح" : "تعديل مغلق"}
+    </button>
   );
 }
