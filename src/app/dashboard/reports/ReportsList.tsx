@@ -52,7 +52,7 @@ const STATUS_CFG: Record<ReportStatus, { label: string; color: string; bg: strin
 };
 
 const REPORTER_KIND_LABEL: Record<ReportRow["reporterKind"], string> = {
-  regular_user: "مستخدم عادي",
+  regular_user: "مستخدم فقط",
   provider_user: "مستخدم + مقدم خدمة",
   unknown: "غير معروف",
 };
@@ -189,7 +189,7 @@ export default function ReportsList({
                         </>
                       )}
                       <span style={{ opacity: 0.5 }}>·</span>
-                      {REPORTER_KIND_LABEL[r.reporterKind]}
+                      <span>{REPORTER_KIND_LABEL[r.reporterKind]}</span>
                       <span style={{ opacity: 0.5 }}>·</span>
                       {r.targetType === "place" ? <MapPin size={12} /> : <AlertCircle size={12} />}
                       {r.targetName}
@@ -245,7 +245,7 @@ export default function ReportsList({
                           </span>
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                             <Mail size={13} />
-                            <span dir="ltr">{r.reporterEmail ?? "لا يوجد إيميل ظاهر"}</span>
+                            <span dir="ltr">{r.reporterEmail ?? "لا يوجد إيميل محفوظ"}</span>
                           </span>
                           <span className={s.badge} style={{ width: "fit-content" }}>
                             {REPORTER_KIND_LABEL[r.reporterKind]}

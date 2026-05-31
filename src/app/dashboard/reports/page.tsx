@@ -3,7 +3,7 @@ import { ShieldAlert, Hourglass, CheckCircle2, XCircle } from "lucide-react";
 import s from "../shared.module.css";
 import ReportsList, { type ReportRow } from "./ReportsList";
 import { setReportStatus } from "./actions";
-import { getProfileDirectory } from "@/lib/admin/users";
+import { getProfileDirectory, listAllAuthUsers } from "@/lib/admin/users";
 
 export const metadata = { title: "البلاغات - رفيق" };
 export const dynamic = "force-dynamic";
@@ -25,7 +25,8 @@ type RawReport = {
 export default async function ReportsPage() {
   const supabase = createAdminClient();
 
-  const [reportsRes, placesRes, dirRes, providerRowsRes, subsRes] = await Promise.allSettled([
+  const [reportsRes, placesRes, dirRes, authUsersRes, providerRowsRes, subsRes] =
+    await Promise.allSettled([
     supabase
       .from("moderation_reports")
       .select("id,reporter_id,target_type,target_id,reason_code,details,status,resolution_note,resolved_at,created_at")
@@ -33,12 +34,13 @@ export default async function ReportsPage() {
       .limit(500),
     supabase.from("places").select("id,place_name"),
     getProfileDirectory(),
+    listAllAuthUsers(),
     supabase.from("providers").select("id, owner_id"),
     supabase
       .from("provider_subscriptions")
       .select("provider_id")
       .in("status", ["active", "trialing", "past_due"]),
-  ]);
+    ]);
 
   const rawReports =
     reportsRes.status === "fulfilled" ? (reportsRes.value.data ?? []) : [];
@@ -54,8 +56,21 @@ export default async function ReportsPage() {
   const emailByUuid = new Map<string, string | null>();
   if (dirRes.status === "fulfilled") {
     for (const [id, u] of dirRes.value) {
-      userByUuid.set(id, u.fullName ?? u.email?.split("@")[0] ?? "مستخدم");
+      userByUuid.set(id, u.fullName ?? u.email?.split("@")[0] ?? "بدون اسم");
       emailByUuid.set(id, u.email);
+    }
+  }
+  if (authUsersRes.status === "fulfilled") {
+    for (const user of authUsersRes.value) {
+      if (!userByUuid.has(user.id)) {
+        userByUuid.set(
+          user.id,
+          user.fullName ?? user.email?.split("@")[0] ?? "بدون اسم",
+        );
+      }
+      if (!emailByUuid.get(user.id)) {
+        emailByUuid.set(user.id, user.email);
+      }
     }
   }
 
@@ -79,7 +94,7 @@ export default async function ReportsPage() {
 
   const reports: ReportRow[] = (rawReports as RawReport[]).map((r) => ({
     id: r.id,
-    reporterName: r.reporter_id ? userByUuid.get(r.reporter_id) ?? "مستخدم" : "—",
+    reporterName: r.reporter_id ? userByUuid.get(r.reporter_id) ?? "بدون اسم" : "—",
     reporterEmail: r.reporter_id ? emailByUuid.get(r.reporter_id) ?? null : null,
     reporterKind: r.reporter_id
       ? providerOwnerIds.has(r.reporter_id)
