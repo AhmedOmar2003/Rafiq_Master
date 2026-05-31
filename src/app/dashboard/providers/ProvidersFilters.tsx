@@ -21,7 +21,7 @@ export type ProviderRow = {
   businessName: string;
   contactEmail: string;
   contactPhone: string | null;
-  status: "pending" | "approved" | "rejected" | "suspended";
+  status: "active" | "rejected" | "suspended";
   createdAt: string;
   tier: "free" | "pro" | "max";
   periodEnd: string | null;
@@ -38,8 +38,7 @@ const TIER_OPTIONS = [
 
 const STATUS_OPTIONS = [
   { label: "كل الحالات", value: "all" },
-  { label: "قيد المراجعة", value: "pending" },
-  { label: "معتمد", value: "approved" },
+  { label: "نشط", value: "active" },
   { label: "معلّق", value: "suspended" },
   { label: "مرفوض", value: "rejected" },
 ];
@@ -57,15 +56,13 @@ const TIER_LABEL: Record<ProviderRow["tier"], string> = {
 };
 
 const STATUS_BADGE: Record<ProviderRow["status"], string> = {
-  approved: "badgeSuccess",
-  pending: "badgeGold",
+  active: "badgeSuccess",
   suspended: "badgeDanger",
   rejected: "badgeDanger",
 };
 
 const STATUS_LABEL: Record<ProviderRow["status"], string> = {
-  approved: "معتمد",
-  pending: "قيد المراجعة",
+  active: "نشط",
   suspended: "معلّق",
   rejected: "مرفوض",
 };
@@ -330,11 +327,9 @@ function TierBadge({ tier }: { tier: ProviderRow["tier"] }) {
 
 function StatusBadge({ status }: { status: ProviderRow["status"] }) {
   const cls =
-    status === "approved"
+    status === "active"
       ? `${s.badge} ${s.badgeSuccess}`
-      : status === "pending"
-        ? `${s.badge} ${s.badgeGold}`
-        : `${s.badge} ${s.badgeDanger}`;
+      : `${s.badge} ${s.badgeDanger}`;
   return <span className={cls}>{STATUS_LABEL[status]}</span>;
 }
 

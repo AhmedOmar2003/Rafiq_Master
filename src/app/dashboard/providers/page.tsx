@@ -28,6 +28,14 @@ type CurrentPlanRow = {
 
 type PlaceRow = { provider_id: string | null };
 
+function deriveProviderDashboardStatus(
+  rawStatus: string | null,
+): ProviderRow["status"] {
+  if (rawStatus === "suspended") return "suspended";
+  if (rawStatus === "rejected") return "rejected";
+  return "active";
+}
+
 /**
  * Providers operations page.
  *
@@ -39,6 +47,11 @@ type PlaceRow = { provider_id: string | null };
  *
  * RLS is bypassed by the service-role admin client so we see every provider
  * regardless of moderation state.
+ *
+ * Important UX rule:
+ *   The "status" column here expresses whether the provider account is usable
+ *   inside the product right now, NOT whether their latest places are under
+ *   moderation. Place moderation belongs on `/dashboard/places`.
  */
 export default async function ProvidersPage() {
   const supabase = createAdminClient();
@@ -107,7 +120,7 @@ export default async function ProvidersPage() {
         businessName: p.business_name ?? "—",
         contactEmail: p.contact_email ?? "—",
         contactPhone: p.contact_phone,
-        status: (p.status ?? "pending") as ProviderRow["status"],
+        status: deriveProviderDashboardStatus(p.status),
         createdAt: p.created_at,
         tier: (plan?.tier ?? "free") as ProviderRow["tier"],
         periodEnd: plan?.period_end ?? null,
@@ -117,8 +130,8 @@ export default async function ProvidersPage() {
     });
 
   const total = providers.length;
-  const approved = providers.filter((p) => p.status === "approved").length;
-  const pending = providers.filter((p) => p.status === "pending").length;
+  const active = providers.filter((p) => p.status === "active").length;
+  const suspended = providers.filter((p) => p.status === "suspended").length;
   const paid = providers.filter((p) => p.tier !== "free").length;
 
   return (
@@ -156,20 +169,20 @@ export default async function ProvidersPage() {
             <CheckCircle2 size={22} />
           </div>
           <div className={s.statBody}>
-            <div className={s.statValue}>{approved}</div>
-            <div className={s.statLabel}>معتمد</div>
+            <div className={s.statValue}>{active}</div>
+            <div className={s.statLabel}>نشط</div>
           </div>
         </div>
         <div className={s.statCard}>
           <div
             className={s.statIcon}
-            style={{ background: "rgba(245,158,11,0.12)", color: "#d97706" }}
+            style={{ background: "rgba(239,68,68,0.12)", color: "#dc2626" }}
           >
             <Hourglass size={22} />
           </div>
           <div className={s.statBody}>
-            <div className={s.statValue}>{pending}</div>
-            <div className={s.statLabel}>قيد المراجعة</div>
+            <div className={s.statValue}>{suspended}</div>
+            <div className={s.statLabel}>معلّق</div>
           </div>
         </div>
         <div className={s.statCard}>
