@@ -42,7 +42,8 @@ export async function createUser(input: NewUserInput): Promise<{ id: string }> {
   if (!input.email?.includes("@")) {
     throw new Error("صيغة الإيميل غير صحيحة");
   }
-  if (!input.password || input.password.length < 8) {
+  const finalPassword = input.password.trim();
+  if (!finalPassword || finalPassword.length < 8) {
     throw new Error("كلمة المرور لازم ٨ أحرف على الأقل");
   }
   if (!input.fullName?.trim()) {
@@ -56,7 +57,7 @@ export async function createUser(input: NewUserInput): Promise<{ id: string }> {
   const { data: created, error: createErr } =
     await supabase.auth.admin.createUser({
       email: input.email.trim().toLowerCase(),
-      password: input.password,
+      password: finalPassword,
       email_confirm: true,
       user_metadata: {
         full_name: input.fullName.trim(),
