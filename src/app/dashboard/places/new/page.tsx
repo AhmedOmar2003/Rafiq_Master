@@ -20,8 +20,11 @@ export default function NewPlacePage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("");
 
   const [state, formAction, isPending] = useActionState(
-    async (_prevState: any, formData: FormData) => createPlace(formData),
-    null
+    async (
+      _prevState: { error: string } | null,
+      formData: FormData,
+    ) => createPlace(formData),
+    null,
   );
 
   return (

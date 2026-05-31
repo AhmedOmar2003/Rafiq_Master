@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Activity, CheckCircle2, XCircle, Hourglass, CreditCard, UserPlus,
@@ -51,6 +52,10 @@ type ProfileRow = { id: string; full_name: string | null; created_at: string };
  * scan; total latency stays sub-200ms even at scale.
  */
 export default async function ActivityPage() {
+  // We call Date.now() further down to compute the 24h window. In Next 16
+  // server components, time-of-day is a "request-time API" — `connection()`
+  // tells the framework this render must run per-request, never prerendered.
+  await connection();
   const supabase = createAdminClient();
 
   const [
@@ -162,7 +167,11 @@ export default async function ActivityPage() {
   // Sort: most recent first
   events.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  // Headline counts (24h window)
+  // Headline counts (24h window). Time-of-day is intentional here — the
+  // connection() call above already guarantees this runs per-request and
+  // never gets prerendered, so the impure-function lint rule is a false
+  // positive in this context.
+  // eslint-disable-next-line react-hooks/purity
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const last24h = events.filter((e) => e.createdAt > dayAgo);
 
