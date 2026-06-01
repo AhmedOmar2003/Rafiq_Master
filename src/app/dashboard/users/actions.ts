@@ -5,6 +5,108 @@ import { createClient as createSsrClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { currentAdminRole } from "@/lib/auth/role";
 
+type ProviderIdRow = { id: string };
+type PlaceIdRow = { id: string; image_path: string | null };
+type StoragePathRow = { storage_path: string | null };
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const batches: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    batches.push(items.slice(i, i + size));
+  }
+  return batches;
+}
+
+function parsePlaceImagePathFromPublicUrl(value: string | null): string | null {
+  if (!value) return null;
+  const marker = "/storage/v1/object/public/place-images/";
+  const idx = value.indexOf(marker);
+  if (idx === -1) return null;
+  const path = value.slice(idx + marker.length).trim();
+  return path.length > 0 ? decodeURIComponent(path) : null;
+}
+
+async function cleanupUserStorage(userId: string): Promise<void> {
+  const supabase = createAdminClient();
+  const { data: providerRows, error: providerError } = await supabase
+    .from("providers")
+    .select("id")
+    .eq("owner_id", userId);
+
+  if (providerError) {
+    throw new Error(
+      `تعذر تحميل مقدمي الخدمة المرتبطين بالحساب قبل الحذف: ${providerError.message}`,
+    );
+  }
+
+  const providerIds = ((providerRows ?? []) as ProviderIdRow[])
+    .map((row) => row.id)
+    .filter(Boolean);
+
+  if (providerIds.length === 0) return;
+
+  const { data: placeRowsRaw, error: placesError } = await supabase
+    .from("places")
+    .select("id, image_path")
+    .in("provider_id", providerIds);
+
+  if (placesError) {
+    throw new Error(`تعذر تحميل أماكن الحساب قبل الحذف: ${placesError.message}`);
+  }
+
+  const placeRows = (placeRowsRaw ?? []) as PlaceIdRow[];
+  const placeIds = placeRows.map((row) => row.id).filter(Boolean);
+  const placeImagePaths = new Set<string>();
+
+  for (const row of placeRows) {
+    const parsed = parsePlaceImagePathFromPublicUrl(row.image_path);
+    if (parsed) placeImagePaths.add(parsed);
+  }
+
+  if (placeIds.length > 0) {
+    const { data: galleryRows, error: galleryError } = await supabase
+      .from("place_images")
+      .select("storage_path")
+      .in("place_id", placeIds);
+
+    if (galleryError) {
+      throw new Error(`تعذر تحميل صور الأماكن قبل الحذف: ${galleryError.message}`);
+    }
+
+    for (const row of (galleryRows ?? []) as StoragePathRow[]) {
+      const path = row.storage_path?.trim();
+      if (path) placeImagePaths.add(path);
+    }
+  }
+
+  const { data: documentRows, error: docsError } = await supabase
+    .from("provider_documents")
+    .select("storage_path")
+    .in("provider_id", providerIds);
+
+  if (docsError) {
+    throw new Error(`تعذر تحميل مستندات الحساب قبل الحذف: ${docsError.message}`);
+  }
+
+  const providerDocumentPaths = ((documentRows ?? []) as StoragePathRow[])
+    .map((row) => row.storage_path?.trim() ?? "")
+    .filter(Boolean);
+
+  for (const batch of chunk([...placeImagePaths], 100)) {
+    const { error } = await supabase.storage.from("place-images").remove(batch);
+    if (error) {
+      throw new Error(`تعذر حذف صور الأماكن من التخزين: ${error.message}`);
+    }
+  }
+
+  for (const batch of chunk(providerDocumentPaths, 100)) {
+    const { error } = await supabase.storage.from("provider-documents").remove(batch);
+    if (error) {
+      throw new Error(`تعذر حذف مستندات الحساب من التخزين: ${error.message}`);
+    }
+  }
+}
+
 /**
  * Create a new account with the chosen role + permissions in a single call.
  *
@@ -182,6 +284,8 @@ export async function deleteUser(userId: string): Promise<void> {
       throw new Error("لا يمكن حذف آخر مشرف أعلى في النظام");
     }
   }
+
+  await cleanupUserStorage(userId);
 
   const { error } = await supabase.auth.admin.deleteUser(userId);
   if (error) throw new Error(`فشل حذف الحساب: ${error.message}`);
