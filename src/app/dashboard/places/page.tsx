@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type RawPlaceRow = {
+  id: string;
   place_id: number;
   place_name: string;
   city_name: string;
@@ -33,8 +34,21 @@ type ProviderInfoRow = {
   contact_email: string | null;
 };
 
+type AnalyticsEventRow = {
+  place_id: string | null;
+  kind: string;
+};
+
+type CampaignLiteRow = {
+  place_id: string | null;
+  status: string | null;
+};
+
 export default async function PlacesPage() {
   const supabase = createAdminClient();
+  const analyticsCutoff = new Date();
+  analyticsCutoff.setDate(analyticsCutoff.getDate() - 30);
+  const analyticsCutoffIso = analyticsCutoff.toISOString();
 
   // Pull every read in parallel — but settle independently so one failure
   // doesn't tank the whole page. The providers + auth.users joins are
@@ -42,12 +56,12 @@ export default async function PlacesPage() {
   // bad column rename), the page should still render the core places table.
   // We log the per-source error so it surfaces in Vercel logs instead of
   // showing the user a black 500 page.
-  const [placesResult, totalResult, providersResult, dirResult] =
+  const [placesResult, totalResult, providersResult, dirResult, analyticsResult, campaignsResult] =
     await Promise.allSettled([
       supabase
         .from("places")
         .select(
-          "place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id,edit_allowed",
+          "id,place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id,edit_allowed",
         )
         .order("created_at", { ascending: false })
         .limit(250),
@@ -57,6 +71,14 @@ export default async function PlacesPage() {
         .select("id,owner_id,business_name,contact_email"),
       // Indexed profiles directory instead of the unpaginated auth API.
       getProfileDirectory(),
+      supabase
+        .from("analytics_events")
+        .select("place_id,kind")
+        .gte("occurred_at", analyticsCutoffIso)
+        .limit(5000),
+      supabase
+        .from("promotional_campaigns")
+        .select("place_id,status"),
     ]);
 
   function unwrap<T>(
@@ -75,6 +97,8 @@ export default async function PlacesPage() {
 
   const places = unwrap<RawPlaceRow[]>("places", placesResult);
   const providersData = unwrap<ProviderInfoRow[]>("providers", providersResult);
+  const analyticsData = unwrap<AnalyticsEventRow[]>("analytics", analyticsResult);
+  const campaignsData = unwrap<CampaignLiteRow[]>("campaigns", campaignsResult);
 
   // count comes from a head-only query, the shape is slightly different.
   let total = 0;
@@ -110,6 +134,51 @@ export default async function PlacesPage() {
     });
   }
 
+  const analyticsByPlace = new Map<
+    string,
+    { views: number; favorites: number; mapClicks: number; interactions: number }
+  >();
+  for (const row of (analyticsData ?? []) as AnalyticsEventRow[]) {
+    if (!row.place_id) continue;
+    const current = analyticsByPlace.get(row.place_id) ?? {
+      views: 0,
+      favorites: 0,
+      mapClicks: 0,
+      interactions: 0,
+    };
+    switch (row.kind) {
+      case "place_open":
+        current.views += 1;
+        break;
+      case "place_favorite":
+        current.favorites += 1;
+        current.interactions += 1;
+        break;
+      case "place_map_open":
+        current.mapClicks += 1;
+        current.interactions += 1;
+        break;
+      case "place_unfavorite":
+      case "place_share":
+      case "place_phone_call":
+      case "place_website_click":
+      case "place_review_submit":
+      case "recommendation_click":
+        current.interactions += 1;
+        break;
+    }
+    analyticsByPlace.set(row.place_id, current);
+  }
+
+  const campaignsByPlace = new Map<string, { total: number; pending: number }>();
+  for (const row of (campaignsData ?? []) as CampaignLiteRow[]) {
+    if (!row.place_id) continue;
+    const current = campaignsByPlace.get(row.place_id) ?? { total: 0, pending: 0 };
+    current.total += 1;
+    if (row.status === "pending_review") current.pending += 1;
+    campaignsByPlace.set(row.place_id, current);
+  }
+
   const placeRows = rawRows.map((row) => {
     const provider = row.provider_id ? providerById.get(row.provider_id) : undefined;
     const owner = provider?.owner_id ? ownerById.get(provider.owner_id) : undefined;
@@ -118,6 +187,12 @@ export default async function PlacesPage() {
       owner_business: provider?.business_name ?? null,
       owner_email: provider?.contact_email ?? owner?.email ?? null,
       owner_name: owner?.name ?? null,
+      analytics_views: analyticsByPlace.get(row.id)?.views ?? 0,
+      analytics_favorites: analyticsByPlace.get(row.id)?.favorites ?? 0,
+      analytics_map_clicks: analyticsByPlace.get(row.id)?.mapClicks ?? 0,
+      analytics_interactions: analyticsByPlace.get(row.id)?.interactions ?? 0,
+      campaign_count: campaignsByPlace.get(row.id)?.total ?? 0,
+      pending_campaign_count: campaignsByPlace.get(row.id)?.pending ?? 0,
     };
   });
   const pendingCount = placeRows.filter((p) => (p.status ?? "pending") === "pending").length;

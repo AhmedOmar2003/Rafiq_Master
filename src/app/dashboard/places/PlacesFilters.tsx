@@ -8,6 +8,7 @@ import s from "../shared.module.css";
 type PlaceStatus = "pending" | "under_review" | "approved" | "rejected" | "suspended";
 
 type PlaceRow = {
+  id?: string;
   place_id: number;
   place_name: string;
   city_name: string;
@@ -29,6 +30,12 @@ type PlaceRow = {
   /** True when the admin opened the "edit & resubmit" door on a rejected
    * place. Only meaningful while status === 'rejected'. */
   edit_allowed?: boolean | null;
+  analytics_views?: number;
+  analytics_favorites?: number;
+  analytics_map_clicks?: number;
+  analytics_interactions?: number;
+  campaign_count?: number;
+  pending_campaign_count?: number;
 };
 
 const SOURCE_OPTIONS = [
@@ -370,13 +377,15 @@ export default function PlacesFilters({
               <th>النشاط</th>
               <th>التقييم</th>
               <th>الحالة</th>
+              <th>التحليلات</th>
+              <th>الإعلانات</th>
               <th>الإجراءات</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={9}>
                   <div className={s.emptyState}>
                     <div className={s.emptyStateIcon}><MapPin size={26} /></div>
                     <span className={s.emptyStateTitle}>لا توجد أماكن مطابقة</span>
@@ -468,6 +477,20 @@ export default function PlacesFilters({
                             }
                           />
                         )}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.8rem" }}>
+                        <span>مشاهدات: {place.analytics_views ?? 0}</span>
+                        <span>مفضلة: {place.analytics_favorites ?? 0}</span>
+                        <span>خريطة: {place.analytics_map_clicks ?? 0}</span>
+                        <span>تفاعلات: {place.analytics_interactions ?? 0}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.8rem" }}>
+                        <span>إجمالي: {place.campaign_count ?? 0}</span>
+                        <span>قيد المراجعة: {place.pending_campaign_count ?? 0}</span>
                       </div>
                     </td>
                     <td>
