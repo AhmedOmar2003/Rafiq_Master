@@ -8,6 +8,7 @@ import { currentAdminRole } from "@/lib/auth/role";
 type ProviderIdRow = { id: string };
 type PlaceIdRow = { id: string; image_path: string | null };
 type StoragePathRow = { storage_path: string | null };
+type CampaignAssetRow = { image_path: string | null };
 
 function chunk<T>(items: T[], size: number): T[][] {
   const batches: T[][] = [];
@@ -20,6 +21,15 @@ function chunk<T>(items: T[], size: number): T[][] {
 function parsePlaceImagePathFromPublicUrl(value: string | null): string | null {
   if (!value) return null;
   const marker = "/storage/v1/object/public/place-images/";
+  const idx = value.indexOf(marker);
+  if (idx === -1) return null;
+  const path = value.slice(idx + marker.length).trim();
+  return path.length > 0 ? decodeURIComponent(path) : null;
+}
+
+function parseCampaignAssetPathFromPublicUrl(value: string | null): string | null {
+  if (!value) return null;
+  const marker = "/storage/v1/object/public/campaign-assets/";
   const idx = value.indexOf(marker);
   if (idx === -1) return null;
   const path = value.slice(idx + marker.length).trim();
@@ -91,6 +101,21 @@ async function cleanupUserStorage(userId: string): Promise<void> {
   const providerDocumentPaths = ((documentRows ?? []) as StoragePathRow[])
     .map((row) => row.storage_path?.trim() ?? "")
     .filter(Boolean);
+  const campaignAssetPaths = new Set<string>();
+
+  const { data: campaignRows, error: campaignError } = await supabase
+    .from("promotional_campaigns")
+    .select("image_path")
+    .in("provider_id", providerIds);
+
+  if (campaignError) {
+    throw new Error(`تعذر تحميل صور الحملات قبل الحذف: ${campaignError.message}`);
+  }
+
+  for (const row of (campaignRows ?? []) as CampaignAssetRow[]) {
+    const parsed = parseCampaignAssetPathFromPublicUrl(row.image_path);
+    if (parsed) campaignAssetPaths.add(parsed);
+  }
 
   for (const batch of chunk([...placeImagePaths], 100)) {
     const { error } = await supabase.storage.from("place-images").remove(batch);
@@ -103,6 +128,13 @@ async function cleanupUserStorage(userId: string): Promise<void> {
     const { error } = await supabase.storage.from("provider-documents").remove(batch);
     if (error) {
       throw new Error(`تعذر حذف مستندات الحساب من التخزين: ${error.message}`);
+    }
+  }
+
+  for (const batch of chunk([...campaignAssetPaths], 100)) {
+    const { error } = await supabase.storage.from("campaign-assets").remove(batch);
+    if (error) {
+      throw new Error(`تعذر حذف صور الحملات من التخزين: ${error.message}`);
     }
   }
 }
