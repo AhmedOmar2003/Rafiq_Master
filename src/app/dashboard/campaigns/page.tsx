@@ -2,7 +2,12 @@ import { Megaphone, CheckCircle2, Clock3, MousePointerClick } from "lucide-react
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import s from "../shared.module.css";
-import { approveCampaign, rejectCampaign } from "./actions";
+import {
+  approveCampaign,
+  approveCampaignEditRequest,
+  rejectCampaign,
+  rejectCampaignEditRequest,
+} from "./actions";
 
 export const metadata = { title: "إدارة الإعلانات - رفيق" };
 
@@ -25,6 +30,12 @@ type CampaignRow = {
   clicks: number;
   rejection_reason: string | null;
   created_at: string;
+  edit_request_status: string | null;
+  edit_request_note: string | null;
+  edit_request_response: string | null;
+  edit_request_requested_at: string | null;
+  edit_request_reviewed_at: string | null;
+  edit_allowed: boolean | null;
 };
 
 type PlaceRow = {
@@ -90,7 +101,7 @@ export default async function CampaignsPage() {
       supabase
         .from("promotional_campaigns")
         .select(
-          "id,provider_id,place_id,kind,status,title,body,image_path,cta_label,starts_at,ends_at,impressions,clicks,rejection_reason,created_at",
+          "id,provider_id,place_id,kind,status,title,body,image_path,cta_label,starts_at,ends_at,impressions,clicks,rejection_reason,created_at,edit_request_status,edit_request_note,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_allowed",
         )
         .order("created_at", { ascending: false })
         .limit(250),
@@ -121,6 +132,7 @@ export default async function CampaignsPage() {
 
   const pendingCount = rows.filter((row) => row.status === "pending_review").length;
   const activeCount = rows.filter((row) => row.status === "active").length;
+  const pendingEditRequests = rows.filter((row) => row.edit_request_status === "pending").length;
 
   return (
     <div className={s.page}>
@@ -164,6 +176,15 @@ export default async function CampaignsPage() {
             <div className={s.statLabel}>نشطة</div>
           </div>
         </div>
+        <div className={s.statCard}>
+          <div className={s.statIcon} style={{ background: "rgba(59,130,246,0.12)", color: "#2563eb" }}>
+            <Clock3 size={22} />
+          </div>
+          <div className={s.statBody}>
+            <div className={s.statValue}>{pendingEditRequests}</div>
+            <div className={s.statLabel}>طلبات تعديل</div>
+          </div>
+        </div>
       </div>
 
       <div className={s.tableCard}>
@@ -195,6 +216,7 @@ export default async function CampaignsPage() {
                   new Date(row.created_at).getTime() + 6 * 60 * 60 * 1000,
                 );
                 const isPending = row.status === "pending_review";
+                const hasPendingEditRequest = row.edit_request_status === "pending";
                 return (
                   <tr key={row.id}>
                     <td>
@@ -268,12 +290,32 @@ export default async function CampaignsPage() {
                     <td>
                       <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 260 }}>
                         <span style={{ color: "var(--color-gray)" }}>
-                          {isPending
+                          {hasPendingEditRequest
+                            ? `طلب تعديل منذ ${new Date(row.edit_request_requested_at ?? row.created_at).toLocaleString("ar-EG")}`
+                            : isPending
                             ? `الموعد المستهدف: ${reviewDeadline.toLocaleString("ar-EG")}`
+                            : row.edit_request_status === "approved"
+                              ? `تم فتح التعديل للمزوّد${row.edit_request_reviewed_at ? ` • ${new Date(row.edit_request_reviewed_at).toLocaleString("ar-EG")}` : ""}`
+                              : row.edit_request_status === "rejected" && row.edit_request_response?.trim()
+                                ? `رد الإدارة على طلب التعديل: ${row.edit_request_response}`
                             : row.rejection_reason?.trim()
                               ? `سبب الرفض: ${row.rejection_reason}`
                               : "تمت المراجعة"}
                         </span>
+                        {row.edit_request_note?.trim() && (
+                          <div
+                            style={{
+                              background: "rgba(59,130,246,0.08)",
+                              border: "1px solid rgba(59,130,246,0.14)",
+                              borderRadius: 10,
+                              padding: "0.75rem",
+                              color: "#1d4ed8",
+                              fontSize: "0.82rem",
+                            }}
+                          >
+                            <strong>ملاحظة المزوّد:</strong> {row.edit_request_note}
+                          </div>
+                        )}
                         {isPending && (
                           <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
                             <form action={approveCampaign.bind(null, row.id)}>
@@ -309,6 +351,59 @@ export default async function CampaignsPage() {
                                 }}
                               >
                                 رفض الإعلان
+                              </button>
+                            </form>
+                          </div>
+                        )}
+                        {hasPendingEditRequest && (
+                          <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
+                            <form action={approveCampaignEditRequest}>
+                              <input type="hidden" name="id" value={row.id} />
+                              <textarea
+                                name="response"
+                                rows={2}
+                                placeholder="رسالة اختيارية ستظهر للمزوّد عند فتح التعديل"
+                                style={{
+                                  width: "100%",
+                                  marginBottom: 8,
+                                  padding: "0.75rem",
+                                  borderRadius: "10px",
+                                  border: "1px solid var(--color-border, #e5e7eb)",
+                                  fontFamily: "inherit",
+                                }}
+                              />
+                              <button className={s.primaryBtn} type="submit">
+                                افتح التعديل للمزوّد
+                              </button>
+                            </form>
+                            <form action={rejectCampaignEditRequest}>
+                              <input type="hidden" name="id" value={row.id} />
+                              <textarea
+                                name="reason"
+                                rows={2}
+                                placeholder="اكتب سبب رفض طلب التعديل"
+                                style={{
+                                  width: "100%",
+                                  marginBottom: 8,
+                                  padding: "0.75rem",
+                                  borderRadius: "10px",
+                                  border: "1px solid var(--color-border, #e5e7eb)",
+                                  fontFamily: "inherit",
+                                }}
+                              />
+                              <button
+                                type="submit"
+                                style={{
+                                  background: "rgba(220,38,38,0.12)",
+                                  color: "#dc2626",
+                                  border: "none",
+                                  borderRadius: 10,
+                                  padding: "0.7rem 1rem",
+                                  fontWeight: 800,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                رفض طلب التعديل
                               </button>
                             </form>
                           </div>

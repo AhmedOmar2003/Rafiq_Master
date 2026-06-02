@@ -12,6 +12,8 @@ export const metadata = { title: "النشاط - رفيق" };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const RANGE_OPTIONS = [1, 7, 14, 30, 90] as const;
+
 type ModRow = {
   id: string;
   target_type: string;
@@ -63,6 +65,11 @@ type CampaignRow = {
   title: string;
   status: string;
   created_at: string;
+  updated_at: string;
+  edit_request_status: string | null;
+  edit_request_response: string | null;
+  edit_request_requested_at: string | null;
+  edit_request_reviewed_at: string | null;
 };
 type AnalyticsRow = {
   id: string;
@@ -81,21 +88,31 @@ type ProviderRow = { id: string; business_name: string | null };
 type PlaceRow = { id: string; place_name: string | null };
 type ProfileRow = { id: string; full_name: string | null; created_at: string };
 
+function parseRange(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(raw);
+  return RANGE_OPTIONS.includes(parsed as (typeof RANGE_OPTIONS)[number]) ? parsed : 7;
+}
+
+function rangeHref(days: number) {
+  return `/dashboard/activity?range=${days}`;
+}
+
 /**
- * Unified activity stream — merges moderation events, subscription changes,
- * appeal submissions, and user signups into a single chronological feed so
- * the admin can see "everything happening" in one scroll.
- *
- * Each query is bounded (last 200 rows) and sorted in memory by created_at
- * desc. With the indexes from migration 0036, every query is index-only
- * scan; total latency stays sub-200ms even at scale.
+ * Unified activity stream — merges moderation, subscriptions, reports,
+ * campaigns, and real interaction analytics into one admin timeline.
  */
-export default async function ActivityPage() {
-  // We call Date.now() further down to compute the 24h window. In Next 16
-  // server components, time-of-day is a "request-time API" — `connection()`
-  // tells the framework this render must run per-request, never prerendered.
+export default async function ActivityPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ range?: string | string[] }>;
+}) {
+  const params = await searchParams;
   await connection();
   const supabase = createAdminClient();
+  const rangeDays = parseRange(params?.range);
+  // eslint-disable-next-line react-hooks/purity
+  const sinceIso = new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000).toISOString();
 
   const [
     userDirectory,
@@ -114,16 +131,19 @@ export default async function ActivityPage() {
     supabase
       .from("moderation_history")
       .select("id,target_type,target_id,action,from_status,to_status,actor_id,reason,created_at")
+      .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(200),
     supabase
       .from("provider_subscriptions")
       .select("id,provider_id,tier,status,gateway,amount_paid_egp,created_at")
+      .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(100),
     supabase
       .from("place_appeals")
       .select("id,place_id,contact_name,status,created_at")
+      .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(100),
     supabase.from("providers").select("id,business_name"),
@@ -131,28 +151,32 @@ export default async function ActivityPage() {
     supabase
       .from("moderation_reports")
       .select("id,target_type,target_id,reason_code,details,status,created_at")
+      .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(100),
     supabase
       .from("reviews")
       .select("review_id,place_id,name,rating,review_text,created_at")
+      .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(100),
     supabase
       .from("promotional_campaigns")
-      .select("id,provider_id,place_id,title,status,created_at")
-      .order("created_at", { ascending: false })
-      .limit(100),
+      .select("id,provider_id,place_id,title,status,created_at,updated_at,edit_request_status,edit_request_response,edit_request_requested_at,edit_request_reviewed_at")
+      .order("updated_at", { ascending: false })
+      .limit(200),
     supabase
       .from("analytics_events")
       .select("id,kind,place_id,occurred_at")
       .in("kind", ["place_open", "place_favorite", "place_unfavorite", "place_map_open"])
+      .gte("occurred_at", sinceIso)
       .order("occurred_at", { ascending: false })
       .limit(140),
     supabase
       .from("campaign_metric_events")
       .select("id,campaign_id,place_id,metric,occurred_at")
       .eq("metric", "click")
+      .gte("occurred_at", sinceIso)
       .order("occurred_at", { ascending: false })
       .limit(100),
   ]);
@@ -267,6 +291,35 @@ export default async function ActivityPage() {
       subtitle: `${placeName} • ${providerName} • ${campaign.status}`,
       createdAt: campaign.created_at,
     });
+    if (campaign.edit_request_status === "pending" && campaign.edit_request_requested_at) {
+      events.push({
+        id: `campaign-edit-request:${campaign.id}`,
+        kind: "campaign",
+        title: `طلب تعديل إعلان: ${campaign.title}`,
+        subtitle: `${placeName} • ${providerName}`,
+        createdAt: campaign.edit_request_requested_at,
+      });
+    }
+    if (campaign.edit_request_status === "approved" && campaign.edit_request_reviewed_at) {
+      events.push({
+        id: `campaign-edit-approved:${campaign.id}`,
+        kind: "approve",
+        title: `تم فتح تعديل إعلان: ${campaign.title}`,
+        subtitle: `${placeName} • ${providerName}`,
+        detail: campaign.edit_request_response?.trim() || undefined,
+        createdAt: campaign.edit_request_reviewed_at,
+      });
+    }
+    if (campaign.edit_request_status === "rejected" && campaign.edit_request_reviewed_at) {
+      events.push({
+        id: `campaign-edit-rejected:${campaign.id}`,
+        kind: "reject",
+        title: `تم رفض طلب تعديل إعلان: ${campaign.title}`,
+        subtitle: `${placeName} • ${providerName}`,
+        detail: campaign.edit_request_response?.trim() || undefined,
+        createdAt: campaign.edit_request_reviewed_at,
+      });
+    }
   }
 
   // ── interaction analytics ──
@@ -305,6 +358,7 @@ export default async function ActivityPage() {
   // ── user signups ── (most recent 100 from the directory)
   const recentSignups = [...userDirectory.values()]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .filter((u) => u.createdAt >= sinceIso)
     .slice(0, 100);
   for (const u of recentSignups) {
     const name = u.fullName ?? u.email?.split("@")[0] ?? "مستخدم جديد";
@@ -320,13 +374,7 @@ export default async function ActivityPage() {
   // Sort: most recent first
   events.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  // Headline counts (24h window). Time-of-day is intentional here — the
-  // connection() call above already guarantees this runs per-request and
-  // never gets prerendered, so the impure-function lint rule is a false
-  // positive in this context.
-  // eslint-disable-next-line react-hooks/purity
-  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const last24h = events.filter((e) => e.createdAt > dayAgo);
+  const periodEvents = events.filter((e) => e.createdAt >= sinceIso);
 
   return (
     <div className={s.page}>
@@ -339,25 +387,47 @@ export default async function ActivityPage() {
           <p className={s.pageSubtitle}>
             بث مباشر لكل الأحداث: تسجيل، اشتراك، اعتماد، رفض، طعن — مكان واحد للأدمن يتابع منه نبض المنصّة.
           </p>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" }}>
+            {RANGE_OPTIONS.map((days) => {
+              const active = days === rangeDays;
+              return (
+                <a
+                  key={days}
+                  href={rangeHref(days)}
+                  style={{
+                    padding: "0.45rem 0.8rem",
+                    borderRadius: 999,
+                    textDecoration: "none",
+                    fontWeight: 800,
+                    fontSize: "0.82rem",
+                    background: active ? "#681F00" : "rgba(104,31,0,0.08)",
+                    color: active ? "#fff" : "#681F00",
+                  }}
+                >
+                  {days === 1 ? "آخر 24 ساعة" : `آخر ${days} يوم`}
+                </a>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       <div className={s.statsRow}>
-        <Kpi icon={<Activity size={22} />} value={last24h.length} label="نشاط آخر ٢٤ ساعة" tone="#681F00" />
-        <Kpi icon={<UserPlus size={22} />} value={last24h.filter((e) => e.kind === "signup").length} label="تسجيلات جديدة" tone="#2563eb" />
-        <Kpi icon={<CreditCard size={22} />} value={last24h.filter((e) => e.kind === "subscription").length} label="اشتراكات جديدة" tone="#10b981" />
-        <Kpi icon={<CheckCircle2 size={22} />} value={last24h.filter((e) => e.kind === "approve").length} label="عمليات اعتماد" tone="#16a34a" />
-        <Kpi icon={<XCircle size={22} />} value={last24h.filter((e) => e.kind === "reject").length} label="عمليات رفض" tone="#dc2626" />
-        <Kpi icon={<Gavel size={22} />} value={last24h.filter((e) => e.kind === "appeal").length} label="طعون جديدة" tone="#d97706" />
-        <Kpi icon={<Star size={22} />} value={last24h.filter((e) => e.kind === "review").length} label="تقييمات جديدة" tone="#f59e0b" />
-        <Kpi icon={<Siren size={22} />} value={last24h.filter((e) => e.kind === "report").length} label="بلاغات جديدة" tone="#dc2626" />
-        <Kpi icon={<Megaphone size={22} />} value={last24h.filter((e) => e.kind === "campaign").length} label="حملات جديدة" tone="#681F00" />
-        <Kpi icon={<Heart size={22} />} value={last24h.filter((e) => e.kind === "favorite").length} label="تفاعلات المفضلة" tone="#db2777" />
-        <Kpi icon={<Navigation size={22} />} value={last24h.filter((e) => e.kind === "map_open").length} label="فتح الخريطة" tone="#0284c7" />
-        <Kpi icon={<MousePointerClick size={22} />} value={last24h.filter((e) => e.kind === "campaign_click").length} label="نقرات الإعلانات" tone="#9333ea" />
+        <Kpi icon={<Activity size={22} />} value={periodEvents.length} label={rangeDays === 1 ? "نشاط آخر ٢٤ ساعة" : `نشاط آخر ${rangeDays} يوم`} tone="#681F00" />
+        <Kpi icon={<UserPlus size={22} />} value={periodEvents.filter((e) => e.kind === "signup").length} label="تسجيلات جديدة" tone="#2563eb" />
+        <Kpi icon={<CreditCard size={22} />} value={periodEvents.filter((e) => e.kind === "subscription").length} label="اشتراكات جديدة" tone="#10b981" />
+        <Kpi icon={<CheckCircle2 size={22} />} value={periodEvents.filter((e) => e.kind === "approve").length} label="عمليات اعتماد" tone="#16a34a" />
+        <Kpi icon={<XCircle size={22} />} value={periodEvents.filter((e) => e.kind === "reject").length} label="عمليات رفض" tone="#dc2626" />
+        <Kpi icon={<Gavel size={22} />} value={periodEvents.filter((e) => e.kind === "appeal").length} label="طعون جديدة" tone="#d97706" />
+        <Kpi icon={<Star size={22} />} value={periodEvents.filter((e) => e.kind === "review").length} label="تقييمات جديدة" tone="#f59e0b" />
+        <Kpi icon={<Siren size={22} />} value={periodEvents.filter((e) => e.kind === "report").length} label="بلاغات جديدة" tone="#dc2626" />
+        <Kpi icon={<Megaphone size={22} />} value={periodEvents.filter((e) => e.kind === "campaign").length} label="حملات أو طلبات إعلان" tone="#681F00" />
+        <Kpi icon={<Heart size={22} />} value={periodEvents.filter((e) => e.kind === "favorite").length} label="تفاعلات المفضلة" tone="#db2777" />
+        <Kpi icon={<Navigation size={22} />} value={periodEvents.filter((e) => e.kind === "map_open").length} label="فتح الخريطة" tone="#0284c7" />
+        <Kpi icon={<MousePointerClick size={22} />} value={periodEvents.filter((e) => e.kind === "campaign_click").length} label="نقرات الإعلانات" tone="#9333ea" />
       </div>
 
-      <ActivityFeed events={events} />
+      <ActivityFeed events={periodEvents} />
     </div>
   );
 }

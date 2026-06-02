@@ -37,6 +37,8 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const RANGE_OPTIONS = [7, 14, 30, 90] as const;
+
 type RecentPlaceRow = {
   place_id: number;
   place_name: string;
@@ -55,11 +57,27 @@ type PlaceWithReviews = {
   rating: number;
 };
 
-export default async function DashboardOverview() {
+function parseRange(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(raw);
+  return RANGE_OPTIONS.includes(parsed as (typeof RANGE_OPTIONS)[number]) ? parsed : 7;
+}
+
+function buildRangeHref(days: number) {
+  return `/dashboard?range=${days}`;
+}
+
+export default async function DashboardOverview({
+  searchParams,
+}: {
+  searchParams?: Promise<{ range?: string | string[] }>;
+}) {
+  const params = await searchParams;
   await connection();
   const supabase = createAdminClient();
+  const rangeDays = parseRange(params?.range);
   // eslint-disable-next-line react-hooks/purity
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const rangeStartIso = new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000).toISOString();
 
   const [
     allUsers,
@@ -75,6 +93,7 @@ export default async function DashboardOverview() {
     { data: catalogRows },
     { count: activeCampaignsCount },
     { count: pendingCampaignsCount },
+    { count: pendingCampaignEditRequestsCount },
     { count: openReportsCount },
     { count: placeOpenCount },
     { count: favoriteAddsCount },
@@ -126,6 +145,10 @@ export default async function DashboardOverview() {
       .select("*", { count: "exact", head: true })
       .eq("status", "pending_review"),
     supabase
+      .from("promotional_campaigns")
+      .select("*", { count: "exact", head: true })
+      .eq("edit_request_status", "pending"),
+    supabase
       .from("moderation_reports")
       .select("*", { count: "exact", head: true })
       .eq("status", "open"),
@@ -133,17 +156,17 @@ export default async function DashboardOverview() {
       .from("analytics_events")
       .select("*", { count: "exact", head: true })
       .eq("kind", "place_open")
-      .gte("occurred_at", sevenDaysAgo),
+      .gte("occurred_at", rangeStartIso),
     supabase
       .from("analytics_events")
       .select("*", { count: "exact", head: true })
       .eq("kind", "place_favorite")
-      .gte("occurred_at", sevenDaysAgo),
+      .gte("occurred_at", rangeStartIso),
     supabase
       .from("analytics_events")
       .select("*", { count: "exact", head: true })
       .eq("kind", "place_map_open")
-      .gte("occurred_at", sevenDaysAgo),
+      .gte("occurred_at", rangeStartIso),
   ]);
 
   const usersCount = allUsers.length;
@@ -297,6 +320,36 @@ export default async function DashboardOverview() {
             <Clock size={14} />
             {format(new Date(), "EEEE، d MMMM yyyy")}
           </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.5rem",
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+              marginTop: "0.75rem",
+            }}
+          >
+            {RANGE_OPTIONS.map((days) => {
+              const active = days === rangeDays;
+              return (
+                <a
+                  key={days}
+                  href={buildRangeHref(days)}
+                  style={{
+                    padding: "0.45rem 0.8rem",
+                    borderRadius: 999,
+                    textDecoration: "none",
+                    fontWeight: 800,
+                    fontSize: "0.82rem",
+                    background: active ? "#681F00" : "rgba(104,31,0,0.08)",
+                    color: active ? "#fff" : "#681F00",
+                  }}
+                >
+                  آخر {days} يوم
+                </a>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -429,7 +482,7 @@ export default async function DashboardOverview() {
           </div>
           <div className={styles.statTrend}>
             <Clock size={16} />
-            <span>{pendingCampaignsCount ?? 0} قيد المراجعة</span>
+            <span>{pendingCampaignsCount ?? 0} جديدة + {pendingCampaignEditRequestsCount ?? 0} تعديل</span>
           </div>
         </div>
 
@@ -455,7 +508,7 @@ export default async function DashboardOverview() {
           </div>
           <div className={styles.statBody}>
             <span className={styles.statValue}>{placeOpenCount ?? 0}</span>
-            <span className={styles.statLabel}>فتح تفاصيل خلال 7 أيام</span>
+            <span className={styles.statLabel}>فتح تفاصيل خلال آخر {rangeDays} يوم</span>
           </div>
           <div className={styles.statTrend}>
             <ArrowUpRight size={16} />
@@ -475,7 +528,7 @@ export default async function DashboardOverview() {
               <Activity className={styles.cardTitleIcon} size={18} />
               <h2 className={styles.cardTitle}>نبض التفاعل</h2>
             </div>
-            <span className={styles.cardBadge}>آخر 7 أيام</span>
+            <span className={styles.cardBadge}>آخر {rangeDays} يوم</span>
           </div>
           <div className={styles.activityGrid}>
             <div className={styles.activityCard}>
