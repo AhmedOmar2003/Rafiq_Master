@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import styles from "./page.module.css";
 import {
@@ -20,6 +21,10 @@ import {
   Store,
   Crown,
   Banknote,
+  Megaphone,
+  Heart,
+  Navigation,
+  Siren,
 } from "lucide-react";
 import { format } from "date-fns";
 import GrowthChart from "./GrowthChart";
@@ -51,7 +56,10 @@ type PlaceWithReviews = {
 };
 
 export default async function DashboardOverview() {
+  await connection();
   const supabase = createAdminClient();
+  // eslint-disable-next-line react-hooks/purity
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
     allUsers,
@@ -65,6 +73,12 @@ export default async function DashboardOverview() {
     { count: providersCount },
     { data: subsData },
     { data: catalogRows },
+    { count: activeCampaignsCount },
+    { count: pendingCampaignsCount },
+    { count: openReportsCount },
+    { count: placeOpenCount },
+    { count: favoriteAddsCount },
+    { count: mapOpenCount },
   ] = await Promise.all([
     // Full paginated roster — accurate count + growth bucketing at any scale.
     listAllAuthUsers(),
@@ -103,6 +117,33 @@ export default async function DashboardOverview() {
     supabase
       .from("subscription_plans")
       .select("tier, price_monthly_egp, price_yearly_egp"),
+    supabase
+      .from("promotional_campaigns")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active"),
+    supabase
+      .from("promotional_campaigns")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending_review"),
+    supabase
+      .from("moderation_reports")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "open"),
+    supabase
+      .from("analytics_events")
+      .select("*", { count: "exact", head: true })
+      .eq("kind", "place_open")
+      .gte("occurred_at", sevenDaysAgo),
+    supabase
+      .from("analytics_events")
+      .select("*", { count: "exact", head: true })
+      .eq("kind", "place_favorite")
+      .gte("occurred_at", sevenDaysAgo),
+    supabase
+      .from("analytics_events")
+      .select("*", { count: "exact", head: true })
+      .eq("kind", "place_map_open")
+      .gte("occurred_at", sevenDaysAgo),
   ]);
 
   const usersCount = allUsers.length;
@@ -376,6 +417,51 @@ export default async function DashboardOverview() {
             <span>MRR</span>
           </div>
         </div>
+
+        <div className={`${styles.statCard} ${styles.statCardPrimary}`}>
+          <div className={styles.statCardBg} />
+          <div className={styles.statIconWrap}>
+            <Megaphone size={22} />
+          </div>
+          <div className={styles.statBody}>
+            <span className={styles.statValue}>{activeCampaignsCount ?? 0}</span>
+            <span className={styles.statLabel}>إعلانات نشطة</span>
+          </div>
+          <div className={styles.statTrend}>
+            <Clock size={16} />
+            <span>{pendingCampaignsCount ?? 0} قيد المراجعة</span>
+          </div>
+        </div>
+
+        <div className={`${styles.statCard} ${styles.statCardPurple}`}>
+          <div className={styles.statCardBg} />
+          <div className={styles.statIconWrap}>
+            <Siren size={22} />
+          </div>
+          <div className={styles.statBody}>
+            <span className={styles.statValue}>{openReportsCount ?? 0}</span>
+            <span className={styles.statLabel}>بلاغات مفتوحة</span>
+          </div>
+          <div className={styles.statTrend}>
+            <Activity size={16} />
+            <span>تحتاج متابعة</span>
+          </div>
+        </div>
+
+        <div className={`${styles.statCard} ${styles.statCardGold}`}>
+          <div className={styles.statCardBg} />
+          <div className={styles.statIconWrap}>
+            <Eye size={22} />
+          </div>
+          <div className={styles.statBody}>
+            <span className={styles.statValue}>{placeOpenCount ?? 0}</span>
+            <span className={styles.statLabel}>فتح تفاصيل خلال 7 أيام</span>
+          </div>
+          <div className={styles.statTrend}>
+            <ArrowUpRight size={16} />
+            <span>تفاعل حقيقي</span>
+          </div>
+        </div>
       </div>
 
       {/* ── 14-day growth chart ── */}
@@ -383,6 +469,57 @@ export default async function DashboardOverview() {
 
       {/* ── Main Grid ── */}
       <div className={styles.mainGrid}>
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardTitleGroup}>
+              <Activity className={styles.cardTitleIcon} size={18} />
+              <h2 className={styles.cardTitle}>نبض التفاعل</h2>
+            </div>
+            <span className={styles.cardBadge}>آخر 7 أيام</span>
+          </div>
+          <div className={styles.activityGrid}>
+            <div className={styles.activityCard}>
+              <div className={styles.activityDot} style={{ background: "#681F00" }} />
+              <div className={styles.activityBody}>
+                <span className={styles.activityName}>فتح التفاصيل</span>
+                <span className={styles.activityCount}>{placeOpenCount ?? 0} مرة</span>
+              </div>
+              <div className={styles.activityPercent} style={{ color: "#681F00" }}>
+                <Eye size={16} />
+              </div>
+            </div>
+            <div className={styles.activityCard}>
+              <div className={styles.activityDot} style={{ background: "#db2777" }} />
+              <div className={styles.activityBody}>
+                <span className={styles.activityName}>إضافات المفضلة</span>
+                <span className={styles.activityCount}>{favoriteAddsCount ?? 0} مرة</span>
+              </div>
+              <div className={styles.activityPercent} style={{ color: "#db2777" }}>
+                <Heart size={16} />
+              </div>
+            </div>
+            <div className={styles.activityCard}>
+              <div className={styles.activityDot} style={{ background: "#0284c7" }} />
+              <div className={styles.activityBody}>
+                <span className={styles.activityName}>فتح الخريطة</span>
+                <span className={styles.activityCount}>{mapOpenCount ?? 0} مرة</span>
+              </div>
+              <div className={styles.activityPercent} style={{ color: "#0284c7" }}>
+                <Navigation size={16} />
+              </div>
+            </div>
+            <div className={styles.activityCard}>
+              <div className={styles.activityDot} style={{ background: "#16a34a" }} />
+              <div className={styles.activityBody}>
+                <span className={styles.activityName}>الإعلانات النشطة</span>
+                <span className={styles.activityCount}>{activeCampaignsCount ?? 0} حملة</span>
+              </div>
+              <div className={styles.activityPercent} style={{ color: "#16a34a" }}>
+                <Megaphone size={16} />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* ── Top Places ── */}
         <div className={`${styles.card} ${styles.cardWide}`}>

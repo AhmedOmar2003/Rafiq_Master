@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfileDirectory } from "@/lib/admin/users";
 import {
   Activity, CheckCircle2, XCircle, Hourglass, CreditCard, UserPlus,
-  Store, Gavel, MapPin, Trash2,
+  Store, Gavel, MapPin, Trash2, Star, Siren, Megaphone, Heart, Navigation, MousePointerClick,
 } from "lucide-react";
 import s from "../shared.module.css";
 import ActivityFeed, { type ActivityRow } from "./ActivityFeed";
@@ -39,6 +39,44 @@ type AppealRow = {
   status: string;
   created_at: string;
 };
+type ReportRow = {
+  id: string;
+  target_type: string;
+  target_id: string;
+  reason_code: string;
+  details: string | null;
+  status: string;
+  created_at: string;
+};
+type ReviewRow = {
+  review_id: number;
+  place_id: string;
+  name: string | null;
+  rating: number | null;
+  review_text: string | null;
+  created_at: string;
+};
+type CampaignRow = {
+  id: string;
+  provider_id: string;
+  place_id: string | null;
+  title: string;
+  status: string;
+  created_at: string;
+};
+type AnalyticsRow = {
+  id: string;
+  kind: string;
+  place_id: string | null;
+  occurred_at: string;
+};
+type CampaignMetricRow = {
+  id: number;
+  campaign_id: string;
+  place_id: string | null;
+  metric: string;
+  occurred_at: string;
+};
 type ProviderRow = { id: string; business_name: string | null };
 type PlaceRow = { id: string; place_name: string | null };
 type ProfileRow = { id: string; full_name: string | null; created_at: string };
@@ -66,6 +104,11 @@ export default async function ActivityPage() {
     { data: appealRows },
     { data: providerRows },
     { data: placeRows },
+    { data: reportRows },
+    { data: reviewRows },
+    { data: campaignRows },
+    { data: analyticsRows },
+    { data: campaignMetricRows },
   ] = await Promise.all([
     getProfileDirectory(),
     supabase
@@ -85,6 +128,33 @@ export default async function ActivityPage() {
       .limit(100),
     supabase.from("providers").select("id,business_name"),
     supabase.from("places").select("id,place_name"),
+    supabase
+      .from("moderation_reports")
+      .select("id,target_type,target_id,reason_code,details,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("reviews")
+      .select("review_id,place_id,name,rating,review_text,created_at")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("promotional_campaigns")
+      .select("id,provider_id,place_id,title,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("analytics_events")
+      .select("id,kind,place_id,occurred_at")
+      .in("kind", ["place_open", "place_favorite", "place_unfavorite", "place_map_open"])
+      .order("occurred_at", { ascending: false })
+      .limit(140),
+    supabase
+      .from("campaign_metric_events")
+      .select("id,campaign_id,place_id,metric,occurred_at")
+      .eq("metric", "click")
+      .order("occurred_at", { ascending: false })
+      .limit(100),
   ]);
 
   const providerByUuid = new Map<string, string>();
@@ -102,6 +172,10 @@ export default async function ActivityPage() {
       full_name: u.fullName ?? u.email?.split("@")[0] ?? null,
       created_at: u.createdAt,
     });
+  }
+  const campaignById = new Map<string, CampaignRow>();
+  for (const row of (campaignRows ?? []) as CampaignRow[]) {
+    campaignById.set(row.id, row);
   }
 
   const events: ActivityRow[] = [];
@@ -148,6 +222,83 @@ export default async function ActivityPage() {
       title: `طعن جديد من ${a.contact_name}`,
       subtitle: `مكان #${a.place_id}`,
       createdAt: a.created_at,
+    });
+  }
+
+  // ── abuse reports ──
+  for (const report of (reportRows ?? []) as ReportRow[]) {
+    const subject =
+      report.target_type === "place"
+        ? placeByUuid.get(report.target_id) ?? "مكان"
+        : report.target_type;
+    events.push({
+      id: `report:${report.id}`,
+      kind: "report",
+      title: `بلاغ جديد على ${subject}`,
+      subtitle: `السبب: ${report.reason_code} • الحالة: ${report.status}`,
+      detail: report.details ?? undefined,
+      createdAt: report.created_at,
+    });
+  }
+
+  // ── review submissions ──
+  for (const review of (reviewRows ?? []) as ReviewRow[]) {
+    const placeName = placeByUuid.get(review.place_id) ?? "مكان";
+    events.push({
+      id: `review:${review.review_id}`,
+      kind: "review",
+      title: `تقييم جديد لـ ${placeName}`,
+      subtitle: `${review.name ?? "مستخدم"} • ${review.rating ?? 0} نجوم`,
+      detail: review.review_text?.trim() || undefined,
+      createdAt: review.created_at,
+    });
+  }
+
+  // ── campaign submissions / updates ──
+  for (const campaign of (campaignRows ?? []) as CampaignRow[]) {
+    const placeName = campaign.place_id
+      ? placeByUuid.get(campaign.place_id) ?? "مكان"
+      : "بدون مكان";
+    const providerName = providerByUuid.get(campaign.provider_id) ?? "مقدم خدمة";
+    events.push({
+      id: `campaign:${campaign.id}`,
+      kind: "campaign",
+      title: `حملة جديدة: ${campaign.title}`,
+      subtitle: `${placeName} • ${providerName} • ${campaign.status}`,
+      createdAt: campaign.created_at,
+    });
+  }
+
+  // ── interaction analytics ──
+  for (const row of (analyticsRows ?? []) as AnalyticsRow[]) {
+    const placeName = row.place_id ? placeByUuid.get(row.place_id) ?? "مكان" : "مكان";
+    const mapping: Record<string, { kind: ActivityRow["kind"]; title: string }> = {
+      place_open: { kind: "place_open", title: `تم فتح تفاصيل ${placeName}` },
+      place_favorite: { kind: "favorite", title: `تمت إضافة ${placeName} إلى المفضلة` },
+      place_unfavorite: { kind: "favorite", title: `تمت إزالة ${placeName} من المفضلة` },
+      place_map_open: { kind: "map_open", title: `تم فتح خريطة ${placeName}` },
+    };
+    const event = mapping[row.kind];
+    if (!event) continue;
+    events.push({
+      id: `analytics:${row.id}`,
+      kind: event.kind,
+      title: event.title,
+      subtitle: placeName,
+      createdAt: row.occurred_at,
+    });
+  }
+
+  // ── campaign clicks ──
+  for (const metric of (campaignMetricRows ?? []) as CampaignMetricRow[]) {
+    const campaign = campaignById.get(metric.campaign_id);
+    const placeName = metric.place_id ? placeByUuid.get(metric.place_id) ?? "مكان" : "مكان";
+    events.push({
+      id: `campaign-click:${metric.id}`,
+      kind: "campaign_click",
+      title: `نقرة على إعلان ${campaign?.title ?? "بدون عنوان"}`,
+      subtitle: placeName,
+      createdAt: metric.occurred_at,
     });
   }
 
@@ -198,6 +349,12 @@ export default async function ActivityPage() {
         <Kpi icon={<CheckCircle2 size={22} />} value={last24h.filter((e) => e.kind === "approve").length} label="عمليات اعتماد" tone="#16a34a" />
         <Kpi icon={<XCircle size={22} />} value={last24h.filter((e) => e.kind === "reject").length} label="عمليات رفض" tone="#dc2626" />
         <Kpi icon={<Gavel size={22} />} value={last24h.filter((e) => e.kind === "appeal").length} label="طعون جديدة" tone="#d97706" />
+        <Kpi icon={<Star size={22} />} value={last24h.filter((e) => e.kind === "review").length} label="تقييمات جديدة" tone="#f59e0b" />
+        <Kpi icon={<Siren size={22} />} value={last24h.filter((e) => e.kind === "report").length} label="بلاغات جديدة" tone="#dc2626" />
+        <Kpi icon={<Megaphone size={22} />} value={last24h.filter((e) => e.kind === "campaign").length} label="حملات جديدة" tone="#681F00" />
+        <Kpi icon={<Heart size={22} />} value={last24h.filter((e) => e.kind === "favorite").length} label="تفاعلات المفضلة" tone="#db2777" />
+        <Kpi icon={<Navigation size={22} />} value={last24h.filter((e) => e.kind === "map_open").length} label="فتح الخريطة" tone="#0284c7" />
+        <Kpi icon={<MousePointerClick size={22} />} value={last24h.filter((e) => e.kind === "campaign_click").length} label="نقرات الإعلانات" tone="#9333ea" />
       </div>
 
       <ActivityFeed events={events} />
@@ -233,6 +390,13 @@ export const ICONS = {
   subscription: CreditCard,
   signup: UserPlus,
   appeal: Gavel,
+  review: Star,
+  report: Siren,
+  campaign: Megaphone,
+  place_open: Activity,
+  favorite: Heart,
+  map_open: Navigation,
+  campaign_click: MousePointerClick,
   place: MapPin,
   provider: Store,
 };

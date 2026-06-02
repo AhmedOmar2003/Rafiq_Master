@@ -4,13 +4,16 @@ import { useMemo, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Search, X, Filter, ChevronDown, CheckCircle2, XCircle, Hourglass,
-  CreditCard, UserPlus, Gavel, Activity as ActivityIcon, Trash2,
+  CreditCard, UserPlus, Gavel, Activity as ActivityIcon, Trash2, Star,
+  Siren, Megaphone, Heart, Navigation, MousePointerClick,
 } from "lucide-react";
 import s from "../shared.module.css";
 
 export type ActivityKind =
   | "approve" | "reject" | "suspend" | "pending"
-  | "subscription" | "signup" | "appeal";
+  | "subscription" | "signup" | "appeal"
+  | "review" | "report" | "campaign" | "place_open"
+  | "favorite" | "map_open" | "campaign_click";
 
 export type ActivityRow = {
   id: string;
@@ -29,6 +32,13 @@ const KIND_CFG: Record<ActivityKind, { label: string; color: string; bg: string;
   subscription: { label: "اشتراك",      color: "#10b981", bg: "rgba(16,185,129,0.10)", icon: CreditCard },
   signup:       { label: "تسجيل",       color: "#2563eb", bg: "rgba(37,99,235,0.10)",  icon: UserPlus },
   appeal:       { label: "طعن",         color: "#7c3aed", bg: "rgba(124,58,237,0.10)", icon: Gavel },
+  review:       { label: "تقييم",       color: "#f59e0b", bg: "rgba(245,158,11,0.12)", icon: Star },
+  report:       { label: "بلاغ",        color: "#ef4444", bg: "rgba(239,68,68,0.12)",  icon: Siren },
+  campaign:     { label: "إعلان",       color: "#681F00", bg: "rgba(104,31,0,0.10)",   icon: Megaphone },
+  place_open:   { label: "مشاهدة",      color: "#0f766e", bg: "rgba(15,118,110,0.12)", icon: ActivityIcon },
+  favorite:     { label: "مفضلة",       color: "#db2777", bg: "rgba(219,39,119,0.12)", icon: Heart },
+  map_open:     { label: "خريطة",       color: "#0284c7", bg: "rgba(2,132,199,0.12)",  icon: Navigation },
+  campaign_click:{ label: "نقرة إعلان", color: "#9333ea", bg: "rgba(147,51,234,0.12)", icon: MousePointerClick },
 };
 
 const KIND_OPTIONS = [
@@ -38,6 +48,13 @@ const KIND_OPTIONS = [
   { label: "اشتراكات",    value: "subscription" as const },
   { label: "تسجيلات",     value: "signup" as const },
   { label: "طعون",         value: "appeal" as const },
+  { label: "تقييمات",      value: "review" as const },
+  { label: "بلاغات",       value: "report" as const },
+  { label: "إعلانات",      value: "campaign" as const },
+  { label: "مشاهدات الأماكن", value: "place_open" as const },
+  { label: "المفضلة",      value: "favorite" as const },
+  { label: "الخريطة",      value: "map_open" as const },
+  { label: "نقرات الإعلانات", value: "campaign_click" as const },
 ];
 
 export default function ActivityFeed({ events }: { events: ActivityRow[] }) {
