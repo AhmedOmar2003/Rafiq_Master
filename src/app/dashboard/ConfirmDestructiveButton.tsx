@@ -1,7 +1,15 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, useRef, useState, useTransition } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { AlertTriangle } from "lucide-react";
+import { createPortal } from "react-dom";
 import styles from "./ConfirmDestructiveButton.module.css";
 
 type ConfirmDestructiveButtonProps = {
@@ -40,6 +48,17 @@ export default function ConfirmDestructiveButton({
 
   const isBusy = disabled || submitting || isPending;
 
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   function close() {
     if (isBusy) return;
     setOpen(false);
@@ -77,43 +96,54 @@ export default function ConfirmDestructiveButton({
         {children}
       </button>
 
-      {open && (
-        <div className={styles.overlay} onClick={(event) => {
-          if (event.target === event.currentTarget) close();
-        }}>
-          <div className={styles.card} role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
-            <div className={styles.header}>
-              <div className={styles.iconWrap}>
-                <AlertTriangle size={26} strokeWidth={2.4} />
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={styles.overlay}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) close();
+              }}
+            >
+              <div
+                className={styles.card}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="confirm-delete-title"
+              >
+                <div className={styles.header}>
+                  <div className={styles.iconWrap}>
+                    <AlertTriangle size={26} strokeWidth={2.4} />
+                  </div>
+                  <h3 id="confirm-delete-title" className={styles.title}>
+                    {title}
+                  </h3>
+                </div>
+
+                <p className={styles.body}>{message}</p>
+
+                <div className={styles.actions}>
+                  <button
+                    type="button"
+                    onClick={close}
+                    className={styles.cancelBtn}
+                    disabled={isBusy}
+                  >
+                    {cancelLabel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirm}
+                    className={styles.confirmBtn}
+                    disabled={isBusy}
+                  >
+                    {isBusy ? pendingLabel : confirmLabel}
+                  </button>
+                </div>
               </div>
-              <h3 id="confirm-delete-title" className={styles.title}>
-                {title}
-              </h3>
-            </div>
-
-            <p className={styles.body}>{message}</p>
-
-            <div className={styles.actions}>
-              <button
-                type="button"
-                onClick={close}
-                className={styles.cancelBtn}
-                disabled={isBusy}
-              >
-                {cancelLabel}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                className={styles.confirmBtn}
-                disabled={isBusy}
-              >
-                {isBusy ? pendingLabel : confirmLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
