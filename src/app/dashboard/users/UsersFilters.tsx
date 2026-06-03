@@ -5,6 +5,7 @@ import { Search, X, ChevronDown, Users, Shield, User, Store, Trash2 } from "luci
 import { format } from "date-fns";
 import s from "../shared.module.css";
 import ls from "./users.module.css";
+import ConfirmDestructiveButton from "../ConfirmDestructiveButton";
 
 type UserRow = {
   id: string;
@@ -112,13 +113,8 @@ export default function UsersFilters({
   // sees both facts without one masking the other.
   const providerChipCls = `${s.badge} ${s.badgePurple}`;
 
-  function handleDelete(user: UserRow, name: string) {
+  function handleDelete(user: UserRow) {
     if (user.role) return;
-    const ok = window.confirm(
-      `سيتم حذف الحساب نهائيًا للمستخدم "${name}" مع كل بياناته المرتبطة. لا يمكن التراجع. هل تريد المتابعة؟`,
-    );
-    if (!ok) return;
-
     startTransition(async () => {
       await deleteAction(user.id);
     });
@@ -262,19 +258,22 @@ export default function UsersFilters({
                     </td>
                     <td>
                       {canDelete ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(user, name)}
+                        <ConfirmDestructiveButton
+                          title="حذف المستخدم نهائيًا"
+                          message={`سيتم حذف الحساب للمستخدم "${name}" مع كل بياناته المرتبطة بشكل نهائي. لا يمكن التراجع بعد التأكيد.`}
+                          confirmLabel="تأكيد الحذف"
+                          pendingLabel="جارٍ الحذف..."
                           disabled={isPending}
-                          className={s.clearAllBtn}
-                          style={{
+                          onConfirm={() => handleDelete(user)}
+                          triggerClassName={s.clearAllBtn}
+                          triggerStyle={{
                             borderColor: "rgba(220,38,38,0.24)",
                             color: "#dc2626",
                           }}
                         >
                           <Trash2 size={13} />
                           حذف نهائي
-                        </button>
+                        </ConfirmDestructiveButton>
                       ) : (
                         <span className={`${s.badge} ${s.badgeGray}`}>محمي</span>
                       )}

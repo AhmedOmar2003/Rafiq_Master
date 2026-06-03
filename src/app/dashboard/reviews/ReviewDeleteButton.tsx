@@ -1,30 +1,23 @@
 "use client";
 
-import { useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteReview } from "./actions";
 import styles from "../places/page.module.css";
+import ConfirmDestructiveButton from "../ConfirmDestructiveButton";
 
 export default function ReviewDeleteButton({ reviewId }: { reviewId: number }) {
-  const [isPending, startTransition] = useTransition();
-
-  const handleDelete = () => {
-    if (window.confirm("هل أنت متأكد من حذف هذا التقييم؟")) {
-      startTransition(async () => {
-        await deleteReview(reviewId);
-      });
-    }
-  };
-
   return (
-    <button 
-      onClick={handleDelete} 
-      className={styles.deleteButton} 
-      title="حذف"
-      disabled={isPending}
-      style={{ opacity: isPending ? 0.5 : 1, cursor: isPending ? "not-allowed" : "pointer" }}
+    <ConfirmDestructiveButton
+      title="حذف التقييم"
+      message="سيتم حذف هذا التقييم نهائيًا من لوحة التحكم. لا يمكن التراجع بعد التأكيد."
+      confirmLabel="تأكيد الحذف"
+      pendingLabel="جارٍ الحذف..."
+      onConfirm={() => deleteReview(reviewId)}
+      triggerClassName={styles.deleteButton}
+      triggerTitle="حذف"
+      triggerStyle={{ cursor: "pointer" }}
     >
       <Trash2 size={18} />
-    </button>
+    </ConfirmDestructiveButton>
   );
 }

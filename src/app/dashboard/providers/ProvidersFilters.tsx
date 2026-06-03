@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import s from "../shared.module.css";
+import ConfirmDestructiveButton from "../ConfirmDestructiveButton";
 
 export type ProviderRow = {
   id: string;
@@ -108,10 +109,6 @@ export default function ProvidersFilters({
 
   function handleDelete(provider: ProviderRow) {
     if (!provider.ownerId) return;
-    const ok = window.confirm(
-      `سيتم حذف مقدم الخدمة "${provider.businessName}" نهائيًا مع حسابه وكل بياناته وأماكنه واشتراكاته. لا يمكن التراجع. هل تريد المتابعة؟`,
-    );
-    if (!ok) return;
 
     startTransition(async () => {
       await deleteAction(provider.ownerId!);
@@ -317,19 +314,22 @@ export default function ProvidersFilters({
                     </td>
                     {canDelete && (
                       <td>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(p)}
+                        <ConfirmDestructiveButton
+                          title="حذف مقدم الخدمة نهائيًا"
+                          message={`سيتم حذف مقدم الخدمة "${p.businessName}" مع حسابه وكل بياناته وأماكنه واشتراكاته بشكل نهائي. لا يمكن التراجع بعد التأكيد.`}
+                          confirmLabel="تأكيد الحذف"
+                          pendingLabel="جارٍ الحذف..."
                           disabled={isPending || !p.ownerId}
-                          className={s.clearAllBtn}
-                          style={{
+                          onConfirm={() => handleDelete(p)}
+                          triggerClassName={s.clearAllBtn}
+                          triggerStyle={{
                             borderColor: "rgba(220,38,38,0.24)",
                             color: "#dc2626",
                           }}
                         >
                           <Trash2 size={13} />
                           حذف نهائي
-                        </button>
+                        </ConfirmDestructiveButton>
                       </td>
                     )}
                   </tr>

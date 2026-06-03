@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { Edit3, Trash2, Search, X, ChevronDown, Star, MapPin, Utensils, PartyPopper, Building2, Activity, Dices, Wallet, CheckCircle2, XCircle, Hourglass, Store, Mail, ShieldCheck, Filter } from "lucide-react";
 import s from "../shared.module.css";
+import ConfirmDestructiveButton from "../ConfirmDestructiveButton";
 
 type PlaceStatus = "pending" | "under_review" | "approved" | "rejected" | "suspended";
 
@@ -541,15 +542,17 @@ export default function PlacesFilters({
                         >
                           <Edit3 size={16} />
                         </Link>
-                        <form action={deleteAction.bind(null, place.place_id)}>
-                          <button
-                            type="submit"
-                            className={`${s.actionBtn} ${s.actionBtnDelete}`}
-                            title="حذف"
-                          >
+                        <ConfirmDestructiveButton
+                          title="حذف المكان"
+                          message={`سيتم حذف "${place.place_name}" نهائيًا من النظام. هذا الإجراء لا يمكن التراجع عنه.`}
+                          confirmLabel="تأكيد الحذف"
+                          pendingLabel="جارٍ الحذف..."
+                          formAction={deleteAction.bind(null, place.place_id)}
+                          triggerClassName={`${s.actionBtn} ${s.actionBtnDelete}`}
+                          triggerTitle="حذف"
+                        >
                             <Trash2 size={16} />
-                          </button>
-                        </form>
+                        </ConfirmDestructiveButton>
                       </div>
                     </td>
                   </tr>

@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Search, X, ChevronDown, Star, Trash2, MapPin } from "lucide-react";
 import s from "../shared.module.css";
 import ls from "./reviews.module.css";
+import ConfirmDestructiveButton from "../ConfirmDestructiveButton";
 
 type ReviewRow = {
   review_id: number;
@@ -286,15 +287,17 @@ export default function ReviewsFilters({
                     })}
                   </td>
                   <td>
-                    <form action={deleteAction.bind(null, review.review_id)}>
-                      <button
-                        type="submit"
-                        className={`${s.actionBtn} ${s.actionBtnDelete}`}
-                        title="حذف"
-                      >
+                    <ConfirmDestructiveButton
+                      title="حذف التقييم"
+                      message={`سيتم حذف تقييم "${review.name || "هذا المستخدم"}" على "${review.places?.place_name || "هذا المكان"}" نهائيًا. لا يمكن التراجع.`}
+                      confirmLabel="تأكيد الحذف"
+                      pendingLabel="جارٍ الحذف..."
+                      formAction={deleteAction.bind(null, review.review_id)}
+                      triggerClassName={`${s.actionBtn} ${s.actionBtnDelete}`}
+                      triggerTitle="حذف"
+                    >
                         <Trash2 size={16} />
-                      </button>
-                    </form>
+                    </ConfirmDestructiveButton>
                   </td>
                 </tr>
               ))
