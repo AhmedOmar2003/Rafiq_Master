@@ -312,7 +312,7 @@ export default async function DashboardOverview({
           </div>
           <h1 className={styles.title}>نظرة عامة</h1>
           <p className={styles.subtitle}>
-            مرحباً بك! إليك أبرز إحصائيات تطبيق رفيق اليوم.
+            أهم أرقام رفيق قدامك بشكل سريع وواضح.
           </p>
         </div>
         <div className={styles.headerRight}>

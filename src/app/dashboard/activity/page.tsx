@@ -551,6 +551,24 @@ export default async function ActivityPage({
         subtitle: actor,
         detail: `التقييم: ${numberPayloadValue(payload, "rating") ?? 0} نجوم`,
       },
+      update_platform_notifications: {
+        kind: "admin_action",
+        title: `الأدمن حدّث إعدادات الإشعارات`,
+        subtitle: actor,
+      },
+      update_platform_moderation_sla: {
+        kind: "admin_action",
+        title: `الأدمن حدّث زمن المراجعة`,
+        subtitle: actor,
+        detail:
+          `الأماكن: ${numberPayloadValue(payload, "place_review_hours") ?? 24} ساعة • ` +
+          `الإعلانات: ${numberPayloadValue(payload, "campaign_review_hours") ?? 6} ساعات`,
+      },
+      update_platform_support_profile: {
+        kind: "admin_action",
+        title: `الأدمن حدّث بيانات الدعم`,
+        subtitle: actor,
+      },
     };
 
     const event = mapping[log.action];
@@ -592,7 +610,7 @@ export default async function ActivityPage({
           </div>
           <h1 className={s.pageTitle}>كل اللي بيحصل في رفيق</h1>
           <p className={s.pageSubtitle}>
-            بث مباشر لكل ما يحدث في رفيق: من المستخدمين، ومقدمي الخدمة، والتفاعل داخل التطبيق، وأيضًا كل إجراءات الأدمن من لوحة التحكم نفسها.
+            هنا هتشوف نشاط المستخدمين، المزوّدين، وتعديلات الأدمن في مكان واحد.
           </p>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" }}>
             {RANGE_OPTIONS.map((days) => {

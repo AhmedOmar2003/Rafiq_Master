@@ -87,13 +87,19 @@ export default function ActivityFeed({ events }: { events: ActivityRow[] }) {
           <Search size={16} className={s.searchIcon} />
           <input
             type="text"
-            placeholder="ابحث في النشاط…"
+            placeholder="دوّر في النشاط..."
             value={search}
             className={s.searchInput}
+            aria-label="ابحث في النشاط"
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button className={s.clearSearch} onClick={() => setSearch("")}>
+            <button
+              type="button"
+              className={s.clearSearch}
+              aria-label="امسح البحث"
+              onClick={() => setSearch("")}
+            >
               <X size={14} />
             </button>
           )}
@@ -101,18 +107,24 @@ export default function ActivityFeed({ events }: { events: ActivityRow[] }) {
 
         <div className={s.dropdownWrapper}>
           <button
+            type="button"
             className={`${s.dropdownTrigger} ${kind !== "all" ? s.active : ""}`}
             onClick={() => setKindOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={kindOpen}
+            aria-label="فلتر نوع النشاط"
           >
             <Filter size={14} />
             {KIND_OPTIONS.find((o) => o.value === kind)?.label}
             <ChevronDown size={15} className={kindOpen ? s.chevronRotated : ""} />
           </button>
           {kindOpen && (
-            <ul className={s.dropdownMenu}>
+            <ul className={s.dropdownMenu} role="listbox" aria-label="أنواع النشاط">
               {KIND_OPTIONS.map((opt) => (
                 <li
                   key={opt.value}
+                  role="option"
+                  aria-selected={kind === opt.value}
                   className={`${s.dropdownItem} ${kind === opt.value ? s.selected : ""}`}
                   onClick={() => { setKind(opt.value); setKindOpen(false); }}
                 >
@@ -135,7 +147,7 @@ export default function ActivityFeed({ events }: { events: ActivityRow[] }) {
             <span className={s.emptyStateTitle}>مفيش نشاط مطابق</span>
           </div>
         ) : (
-          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }} aria-label="سجل النشاط">
             {filtered.map((ev, i) => {
               const cfg = KIND_CFG[ev.kind];
               const Icon = cfg.icon;
@@ -215,7 +227,7 @@ export default function ActivityFeed({ events }: { events: ActivityRow[] }) {
                   <div
                     style={{
                       textAlign: "left",
-                      fontSize: "0.75rem",
+                      fontSize: "0.82rem",
                       color: "var(--color-text-tertiary)",
                       whiteSpace: "nowrap",
                       flexShrink: 0,
