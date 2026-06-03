@@ -197,8 +197,8 @@ export default function ActivityFeed({ events }: { events: ActivityRow[] }) {
                     {ev.subtitle && (
                       <div
                         style={{
-                          fontSize: "0.82rem",
-                          color: "var(--color-text-tertiary)",
+                          fontSize: "0.85rem",
+                          color: "var(--color-text-secondary)",
                           marginTop: 2,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -211,7 +211,7 @@ export default function ActivityFeed({ events }: { events: ActivityRow[] }) {
                     {ev.detail && (
                       <div
                         style={{
-                          fontSize: "0.82rem",
+                          fontSize: "0.85rem",
                           color: "var(--color-text-secondary)",
                           marginTop: 4,
                           background: "var(--color-background)",
@@ -227,8 +227,8 @@ export default function ActivityFeed({ events }: { events: ActivityRow[] }) {
                   <div
                     style={{
                       textAlign: "left",
-                      fontSize: "0.82rem",
-                      color: "var(--color-text-tertiary)",
+                      fontSize: "0.85rem",
+                      color: "var(--color-text-secondary)",
                       whiteSpace: "nowrap",
                       flexShrink: 0,
                     }}

@@ -312,7 +312,7 @@ export default async function DashboardOverview({
           </div>
           <h1 className={styles.title}>نظرة عامة</h1>
           <p className={styles.subtitle}>
-            أهم أرقام رفيق قدامك بشكل سريع وواضح.
+            أهم اللي بيحصل في رفيق قدامك بسرعة ووضوح.
           </p>
         </div>
         <div className={styles.headerRight}>
@@ -335,6 +335,7 @@ export default async function DashboardOverview({
                 <a
                   key={days}
                   href={buildRangeHref(days)}
+                  aria-current={active ? "page" : undefined}
                   style={{
                     padding: "0.45rem 0.8rem",
                     borderRadius: 999,

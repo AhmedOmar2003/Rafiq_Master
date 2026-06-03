@@ -45,9 +45,9 @@
 }
 
 .pageSubtitle {
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.7;
-  color: var(--color-gray);
+  color: var(--color-text-secondary, #4b5563);
   margin-top: 0.1rem;
   max-width: 66ch;
 }
@@ -126,8 +126,8 @@
 }
 
 .statLabel {
-  font-size: 0.78rem;
-  color: var(--color-gray);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary, #4b5563);
   font-weight: 600;
   margin-top: 0.2rem;
 }
@@ -378,8 +378,8 @@
 .clearAllBtn:hover { background: var(--color-danger-alpha); }
 
 .resultsCount {
-  font-size: 0.88rem;
-  color: var(--color-gray);
+  font-size: 0.92rem;
+  color: var(--color-text-secondary, #374151);
   background: var(--color-background);
   padding: 0.3rem 0.75rem;
   border-radius: var(--radius-pill);
@@ -471,9 +471,9 @@
 .badgeSuccess { background: var(--color-success-alpha); color: var(--color-success); }
 .badgeDanger  { background: var(--color-danger-alpha);  color: var(--color-danger);  }
 .badgePrimary { background: var(--color-primary-alpha); color: var(--color-primary); }
-.badgeGray    { background: var(--color-gray-lighter);  color: var(--color-gray);    }
-.badgeGold    { background: rgba(217,119,6,0.12); color: #b45309; }
-.badgePurple  { background: rgba(139,92,246,0.12); color: #7c3aed; }
+.badgeGray    { background: var(--color-gray-lighter);  color: var(--color-text-secondary, #374151); }
+.badgeGold    { background: rgba(217,119,6,0.16); color: #92400e; }
+.badgePurple  { background: rgba(139,92,246,0.16); color: #6d28d9; }
 
 /* ── Stars ──────────────────────────────────────────── */
 .starsRow {
@@ -483,7 +483,7 @@
 }
 
 .starFilled { color: #f59e0b; }
-.starEmpty  { color: var(--color-gray-lighter); }
+.starEmpty  { color: #b6b0a9; }
 
 /* ── Row Info Cell ──────────────────────────────────── */
 .infoCell {
@@ -575,8 +575,8 @@
 }
 
 .emptyStateText {
-  font-size: 0.95rem;
-  color: var(--color-gray);
+  font-size: 0.98rem;
+  color: var(--color-text-secondary, #4b5563);
   line-height: 1.7;
 }
 
