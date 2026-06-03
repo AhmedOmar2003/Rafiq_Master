@@ -252,8 +252,8 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #681F00, #8E3006);
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-mid, #76361C));
+  color: var(--color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -312,7 +312,7 @@
 /* ── Topbar ── */
 .topbar {
   height: 68px;
-  background: #fff;
+  background: var(--color-surface);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
@@ -475,8 +475,8 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #681F00, #8E3006);
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-mid, #76361C));
+  color: var(--color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -531,7 +531,7 @@
 }
 
 .modalContent {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: 2rem;
   width: 100%;
@@ -606,16 +606,16 @@
 }
 
 .modalCancelBtn:hover {
-  background: #e5e7eb;
+  background: var(--color-border);
 }
 
 .modalConfirmBtn {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .modalConfirmBtn:hover {
-  background: #b91c1c;
+  filter: brightness(0.88);
 }
 
 /* ══ RESPONSIVE ══════════════════════════════════════════ */

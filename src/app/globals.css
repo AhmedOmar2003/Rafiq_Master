@@ -31,6 +31,8 @@
   
   /* Brand */
   --color-primary: var(--coffee-600);
+  --color-primary-dark: var(--coffee-800);       /* deep brown — logo gradient, active states */
+  --color-primary-mid: var(--coffee-500);        /* mid-point for gradient fills */
   --color-primary-hover: var(--coffee-700);
   --color-primary-active: var(--coffee-800);
   --color-primary-subtle: var(--coffee-50);
@@ -38,6 +40,7 @@
 
   /* Backgrounds & Surfaces */
   --color-background: var(--sand-100);
+  --color-background-alt: var(--gray-50);  /* table headers, muted panels */
   --color-surface: #FFFFFF;
   --color-surface-hover: var(--gray-50);
   --color-surface-disabled: var(--gray-100);
