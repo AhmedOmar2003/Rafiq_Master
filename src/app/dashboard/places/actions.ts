@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAdminAction } from "@/lib/admin/audit";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -26,11 +27,27 @@ export async function createPlace(formData: FormData) {
     approved_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from("places").insert(rawData as never);
+  const { data: inserted, error } = await supabase
+    .from("places")
+    .insert(rawData as never)
+    .select("id,place_id,place_name,status")
+    .single();
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAdminAction({
+    action: "create_place",
+    entityType: "place",
+    entityId: (inserted as { id?: string } | null)?.id ?? null,
+    payload: {
+      place_id: (inserted as { place_id?: number } | null)?.place_id ?? null,
+      place_name: (inserted as { place_name?: string } | null)?.place_name ?? rawData.place_name,
+      status: (inserted as { status?: string } | null)?.status ?? rawData.status,
+      source: "dashboard",
+    },
+  });
 
   revalidatePath("/dashboard/places");
   redirect("/dashboard/places");
@@ -53,14 +70,32 @@ export async function updatePlace(place_id: number, formData: FormData) {
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("places")
     .update(rawData as never)
+    .select("id,place_id,place_name")
     .eq("place_id", place_id);
 
   if (error) {
     throw new Error(error.message);
   }
+
+  const updatedPlace = ((updated ?? []) as Array<{
+    id: string;
+    place_id: number;
+    place_name: string | null;
+  }>)[0];
+
+  await logAdminAction({
+    action: "update_place",
+    entityType: "place",
+    entityId: updatedPlace?.id ?? null,
+    payload: {
+      place_id,
+      place_name: updatedPlace?.place_name ?? rawData.place_name,
+      source: "dashboard",
+    },
+  });
 
   revalidatePath("/dashboard/places");
   redirect("/dashboard/places");
@@ -68,11 +103,28 @@ export async function updatePlace(place_id: number, formData: FormData) {
 
 export async function deletePlace(place_id: number): Promise<void> {
   const supabase = createAdminClient();
+  const { data: existingPlace } = await supabase
+    .from("places")
+    .select("id,place_name")
+    .eq("place_id", place_id)
+    .maybeSingle();
+
   const { error } = await supabase.from("places").delete().eq("place_id", place_id);
 
   if (error) {
     throw new Error(error.message);
   }
+
+  await logAdminAction({
+    action: "delete_place",
+    entityType: "place",
+    entityId: (existingPlace as { id?: string } | null)?.id ?? null,
+    payload: {
+      place_id,
+      place_name: (existingPlace as { place_name?: string } | null)?.place_name ?? null,
+      source: "dashboard",
+    },
+  });
 
   revalidatePath("/dashboard/places");
 }
@@ -107,7 +159,7 @@ export async function setPlaceStatus(
   // moderation history trigger as usual.
   const { data: existingPlaceRaw, error: fetchError } = await supabase
     .from("places")
-    .select("approved_at,suspended_at")
+    .select("id,place_id,place_name,approved_at,suspended_at,status")
     .eq("place_id", placeId)
     .single();
 
@@ -116,8 +168,12 @@ export async function setPlaceStatus(
   }
 
   const existingPlace = existingPlaceRaw as {
+    id: string;
+    place_id: number;
+    place_name: string | null;
     approved_at: string | null;
     suspended_at: string | null;
+    status: string | null;
   };
 
   const { error } = await supabase
@@ -144,6 +200,21 @@ export async function setPlaceStatus(
   if (error) {
     throw new Error(`فشل تحديث الحالة: ${error.message}`);
   }
+
+  await logAdminAction({
+    action: "set_place_status",
+    entityType: "place",
+    entityId: existingPlace.id,
+    payload: {
+      place_id: existingPlace.place_id,
+      place_name: existingPlace.place_name,
+      from_status: existingPlace.status,
+      to_status: status,
+      rejection_reason: rejectionReason ?? null,
+      allow_edit: allowEdit ?? null,
+      source: "dashboard",
+    },
+  });
   revalidatePath("/dashboard/places");
 }
 
@@ -157,6 +228,12 @@ export async function setPlaceEditAllowed(
   allowed: boolean,
 ): Promise<void> {
   const supabase = createAdminClient();
+  const { data: existingPlace } = await supabase
+    .from("places")
+    .select("id,place_id,place_name")
+    .eq("place_id", placeId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("places")
     .update({
@@ -167,5 +244,17 @@ export async function setPlaceEditAllowed(
   if (error) {
     throw new Error(`فشل تعديل صلاحية التعديل: ${error.message}`);
   }
+
+  await logAdminAction({
+    action: "set_place_edit_allowed",
+    entityType: "place",
+    entityId: (existingPlace as { id?: string } | null)?.id ?? null,
+    payload: {
+      place_id: placeId,
+      place_name: (existingPlace as { place_name?: string } | null)?.place_name ?? null,
+      allowed,
+      source: "dashboard",
+    },
+  });
   revalidatePath("/dashboard/places");
 }

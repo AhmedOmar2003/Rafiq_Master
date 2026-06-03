@@ -84,9 +84,34 @@ type CampaignMetricRow = {
   metric: string;
   occurred_at: string;
 };
+type AdminLogRow = {
+  id: string;
+  actor_id: string | null;
+  actor_role: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+};
 type ProviderRow = { id: string; business_name: string | null };
 type PlaceRow = { id: string; place_name: string | null };
 type ProfileRow = { id: string; full_name: string | null; created_at: string };
+type ProviderEventRow = {
+  id: string;
+  owner_id: string | null;
+  business_name: string | null;
+  status: string | null;
+  created_at: string;
+};
+type PlaceEventRow = {
+  id: string;
+  provider_id: string | null;
+  place_id: number;
+  place_name: string | null;
+  status: string | null;
+  created_at: string;
+};
 
 function parseRange(value: string | string[] | undefined): number {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -96,6 +121,16 @@ function parseRange(value: string | string[] | undefined): number {
 
 function rangeHref(days: number) {
   return `/dashboard/activity?range=${days}`;
+}
+
+function stringPayloadValue(payload: Record<string, unknown> | null | undefined, key: string) {
+  const value = payload?.[key];
+  return typeof value === "string" ? value : null;
+}
+
+function numberPayloadValue(payload: Record<string, unknown> | null | undefined, key: string) {
+  const value = payload?.[key];
+  return typeof value === "number" ? value : null;
 }
 
 /**
@@ -121,11 +156,14 @@ export default async function ActivityPage({
     { data: appealRows },
     { data: providerRows },
     { data: placeRows },
+    { data: recentProviderRows },
+    { data: recentPlaceRows },
     { data: reportRows },
     { data: reviewRows },
     { data: campaignRows },
     { data: analyticsRows },
     { data: campaignMetricRows },
+    { data: adminLogRows },
   ] = await Promise.all([
     getProfileDirectory(),
     supabase
@@ -148,6 +186,18 @@ export default async function ActivityPage({
       .limit(100),
     supabase.from("providers").select("id,business_name"),
     supabase.from("places").select("id,place_name"),
+    supabase
+      .from("providers")
+      .select("id,owner_id,business_name,status,created_at")
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("places")
+      .select("id,provider_id,place_id,place_name,status,created_at")
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(150),
     supabase
       .from("moderation_reports")
       .select("id,target_type,target_id,reason_code,details,status,created_at")
@@ -175,10 +225,16 @@ export default async function ActivityPage({
     supabase
       .from("campaign_metric_events")
       .select("id,campaign_id,place_id,metric,occurred_at")
-      .eq("metric", "click")
+      .in("metric", ["click", "impression"])
       .gte("occurred_at", sinceIso)
       .order("occurred_at", { ascending: false })
-      .limit(100),
+      .limit(160),
+    supabase
+      .from("admin_logs")
+      .select("id,actor_id,actor_role,action,entity_type,entity_id,payload,created_at")
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(250),
   ]);
 
   const providerByUuid = new Map<string, string>();
@@ -203,6 +259,34 @@ export default async function ActivityPage({
   }
 
   const events: ActivityRow[] = [];
+
+  // ── provider onboarding / becoming provider ──
+  for (const provider of (recentProviderRows ?? []) as ProviderEventRow[]) {
+    const owner = provider.owner_id
+      ? profileById.get(provider.owner_id)?.full_name ?? "مستخدم"
+      : "مستخدم";
+    events.push({
+      id: `provider-created:${provider.id}`,
+      kind: "signup",
+      title: `تحوّل إلى مقدم خدمة: ${provider.business_name ?? owner}`,
+      subtitle: `${owner} • ${provider.status ?? "active"}`,
+      createdAt: provider.created_at,
+    });
+  }
+
+  // ── place submissions / new listings ──
+  for (const place of (recentPlaceRows ?? []) as PlaceEventRow[]) {
+    const isProviderSubmission = !!place.provider_id;
+    if (!isProviderSubmission) continue;
+    const providerName = providerByUuid.get(place.provider_id!) ?? "مقدم خدمة";
+    events.push({
+      id: `place-created:${place.id}`,
+      kind: "pending",
+      title: `مكان جديد قيد المراجعة: ${place.place_name ?? "مكان"}`,
+      subtitle: `${providerName} • ${place.status ?? "pending"}`,
+      createdAt: place.created_at,
+    });
+  }
 
   // ── moderation_history events (approve/reject/suspend/start_review) ──
   for (const m of (modRows ?? []) as ModRow[]) {
@@ -348,10 +432,133 @@ export default async function ActivityPage({
     const placeName = metric.place_id ? placeByUuid.get(metric.place_id) ?? "مكان" : "مكان";
     events.push({
       id: `campaign-click:${metric.id}`,
-      kind: "campaign_click",
-      title: `نقرة على إعلان ${campaign?.title ?? "بدون عنوان"}`,
+      kind: metric.metric === "impression" ? "campaign_impression" : "campaign_click",
+      title:
+        metric.metric === "impression"
+          ? `ظهر إعلان ${campaign?.title ?? "بدون عنوان"} للمستخدم`
+          : `نقرة على إعلان ${campaign?.title ?? "بدون عنوان"}`,
       subtitle: placeName,
       createdAt: metric.occurred_at,
+    });
+  }
+
+  // ── admin dashboard / privileged actions ──
+  for (const log of (adminLogRows ?? []) as AdminLogRow[]) {
+    const actor = log.actor_id
+      ? profileById.get(log.actor_id)?.full_name ?? "أدمن"
+      : "النظام";
+    const payload = log.payload ?? {};
+    const entityPlaceName = stringPayloadValue(payload, "place_name");
+    const entityTitle = stringPayloadValue(payload, "title");
+    const entityEmail = stringPayloadValue(payload, "email");
+    const businessName = stringPayloadValue(payload, "business_name");
+
+    const mapping: Record<string, Omit<ActivityRow, "id" | "createdAt">> = {
+      create_place: {
+        kind: "admin_action",
+        title: `الأدمن أضاف مكانًا: ${entityPlaceName ?? "مكان"}`,
+        subtitle: actor,
+      },
+      update_place: {
+        kind: "admin_action",
+        title: `الأدمن عدّل مكانًا: ${entityPlaceName ?? "مكان"}`,
+        subtitle: actor,
+      },
+      delete_place: {
+        kind: "admin_action",
+        title: `الأدمن حذف مكانًا: ${entityPlaceName ?? "مكان"}`,
+        subtitle: actor,
+      },
+      set_place_status: {
+        kind:
+          stringPayloadValue(payload, "to_status") === "approved"
+            ? "approve"
+            : stringPayloadValue(payload, "to_status") === "rejected"
+              ? "reject"
+              : stringPayloadValue(payload, "to_status") === "suspended"
+                ? "suspend"
+                : "pending",
+        title: `الأدمن غيّر حالة مكان: ${entityPlaceName ?? "مكان"}`,
+        subtitle: actor,
+        detail: `من ${stringPayloadValue(payload, "from_status") ?? "—"} إلى ${stringPayloadValue(payload, "to_status") ?? "—"}`,
+      },
+      set_place_edit_allowed: {
+        kind: "admin_action",
+        title: `الأدمن حدّث صلاحية تعديل مكان: ${entityPlaceName ?? "مكان"}`,
+        subtitle: actor,
+        detail: (payload.allow_edit === true || payload.allow_edit === "true")
+          ? "فتح التعديل للمزوّد"
+          : "أغلق التعديل للمزوّد",
+      },
+      create_user: {
+        kind: "admin_action",
+        title: `الأدمن أنشأ حسابًا جديدًا`,
+        subtitle: `${actor} • ${entityEmail ?? "بدون إيميل"}`,
+        detail: `الدور: ${stringPayloadValue(payload, "role") ?? "user"}${businessName ? ` • النشاط: ${businessName}` : ""}`,
+      },
+      delete_user: {
+        kind: "admin_action",
+        title: `الأدمن حذف حسابًا نهائيًا`,
+        subtitle: actor,
+        detail: stringPayloadValue(payload, "admin_role")
+          ? `نوع الحساب: ${stringPayloadValue(payload, "admin_role")}`
+          : undefined,
+      },
+      set_admin_role: {
+        kind: "admin_action",
+        title: `الأدمن حدّث صلاحيات حساب إداري`,
+        subtitle: actor,
+        detail: `الدور الجديد: ${stringPayloadValue(payload, "role") ?? "بدون صلاحية"}`,
+      },
+      approve_campaign: {
+        kind: "approve",
+        title: `اعتماد إعلان: ${entityTitle ?? "إعلان"}`,
+        subtitle: actor,
+      },
+      reject_campaign: {
+        kind: "reject",
+        title: `رفض إعلان: ${entityTitle ?? "إعلان"}`,
+        subtitle: actor,
+        detail: stringPayloadValue(payload, "reason") ?? undefined,
+      },
+      approve_campaign_edit_request: {
+        kind: "approve",
+        title: `تمت الموافقة على طلب تعديل إعلان`,
+        subtitle: actor,
+        detail: stringPayloadValue(payload, "response") ?? undefined,
+      },
+      reject_campaign_edit_request: {
+        kind: "reject",
+        title: `تم رفض طلب تعديل إعلان`,
+        subtitle: actor,
+        detail: stringPayloadValue(payload, "reason") ?? undefined,
+      },
+      set_report_status: {
+        kind: "report",
+        title: `الأدمن حدّث حالة بلاغ`,
+        subtitle: actor,
+        detail: `الحالة: ${stringPayloadValue(payload, "status") ?? "—"}${stringPayloadValue(payload, "note") ? ` • ${stringPayloadValue(payload, "note")}` : ""}`,
+      },
+      set_appeal_status: {
+        kind: "appeal",
+        title: `الأدمن حدّث حالة طعن`,
+        subtitle: actor,
+        detail: `الحالة: ${stringPayloadValue(payload, "status") ?? "—"}${stringPayloadValue(payload, "note") ? ` • ${stringPayloadValue(payload, "note")}` : ""}`,
+      },
+      delete_review: {
+        kind: "review",
+        title: `الأدمن حذف تقييمًا`,
+        subtitle: actor,
+        detail: `التقييم: ${numberPayloadValue(payload, "rating") ?? 0} نجوم`,
+      },
+    };
+
+    const event = mapping[log.action];
+    if (!event) continue;
+    events.push({
+      id: `admin-log:${log.id}`,
+      ...event,
+      createdAt: log.created_at,
     });
   }
 
@@ -385,7 +592,7 @@ export default async function ActivityPage({
           </div>
           <h1 className={s.pageTitle}>كل اللي بيحصل في رفيق</h1>
           <p className={s.pageSubtitle}>
-            بث مباشر لكل الأحداث: تسجيل، اشتراك، اعتماد، رفض، طعن — مكان واحد للأدمن يتابع منه نبض المنصّة.
+            بث مباشر لكل ما يحدث في رفيق: من المستخدمين، ومقدمي الخدمة، والتفاعل داخل التطبيق، وأيضًا كل إجراءات الأدمن من لوحة التحكم نفسها.
           </p>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" }}>
             {RANGE_OPTIONS.map((days) => {
@@ -425,6 +632,7 @@ export default async function ActivityPage({
         <Kpi icon={<Heart size={22} />} value={periodEvents.filter((e) => e.kind === "favorite").length} label="تفاعلات المفضلة" tone="#db2777" />
         <Kpi icon={<Navigation size={22} />} value={periodEvents.filter((e) => e.kind === "map_open").length} label="فتح الخريطة" tone="#0284c7" />
         <Kpi icon={<MousePointerClick size={22} />} value={periodEvents.filter((e) => e.kind === "campaign_click").length} label="نقرات الإعلانات" tone="#9333ea" />
+        <Kpi icon={<Activity size={22} />} value={periodEvents.filter((e) => e.kind === "admin_action").length} label="إجراءات الأدمن" tone="#4b5563" />
       </div>
 
       <ActivityFeed events={periodEvents} />
@@ -467,6 +675,8 @@ export const ICONS = {
   favorite: Heart,
   map_open: Navigation,
   campaign_click: MousePointerClick,
+  campaign_impression: Megaphone,
+  admin_action: Activity,
   place: MapPin,
   provider: Store,
 };

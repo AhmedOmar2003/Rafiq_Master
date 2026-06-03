@@ -29,6 +29,71 @@
   gap: 0.9rem;
 }
 
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.fieldBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fieldLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-black);
+}
+
+.input {
+  min-height: 46px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  background: var(--color-background);
+  padding: 0.8rem 0.95rem;
+  font-size: 0.9rem;
+  color: var(--color-black);
+  font-family: inherit;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-white);
+  box-shadow: 0 0 0 4px rgba(104,31,0,0.08);
+}
+
+.saveBtn {
+  width: fit-content;
+  min-height: 44px;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: filter 0.18s ease, transform 0.18s ease;
+}
+
+.saveBtn:hover {
+  filter: brightness(0.94);
+}
+
 .cardIcon {
   width: 42px;
   height: 42px;
@@ -215,10 +280,34 @@
   gap: 1rem;
 }
 
+.notifRowInteractive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  gap: 1rem;
+  cursor: pointer;
+}
+
 .notifLabel {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--color-black);
+}
+
+.toggleWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.toggleInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 /* Toggle */
@@ -230,11 +319,19 @@
   position: relative;
   transition: background 0.25s;
   flex-shrink: 0;
-  cursor: not-allowed;
-  opacity: 0.75;
+  cursor: pointer;
+  opacity: 1;
 }
 
 .toggleOn { background: var(--color-primary); }
+
+.toggleInput:checked + .toggle {
+  background: var(--color-primary);
+}
+
+.toggleInput:checked + .toggle .toggleThumb {
+  transform: translateX(-18px);
+}
 
 .toggleThumb {
   position: absolute;
@@ -311,4 +408,5 @@
   .grid { grid-template-columns: 1fr; }
   .cardFull { grid-column: span 1; }
   .dbStats { flex-direction: column; }
+  .fieldGrid { grid-template-columns: 1fr; }
 }

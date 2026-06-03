@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient as createSsrClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { currentAdminRole } from "@/lib/auth/role";
+import { logAdminAction } from "@/lib/admin/audit";
 
 type ProviderIdRow = { id: string };
 type PlaceIdRow = { id: string; image_path: string | null };
@@ -245,6 +246,18 @@ export async function createUser(input: NewUserInput): Promise<{ id: string }> {
 
   revalidatePath("/dashboard/users");
   revalidatePath("/dashboard/providers");
+  await logAdminAction({
+    action: "create_user",
+    entityType: input.role === "provider" ? "provider_user" : "user",
+    entityId: userId,
+    payload: {
+      email: input.email.trim().toLowerCase(),
+      full_name: input.fullName.trim(),
+      role: input.role,
+      business_name: input.businessName?.trim() || null,
+      source: "dashboard",
+    },
+  });
   return { id: userId };
 }
 
@@ -273,6 +286,16 @@ export async function setAdminRole(
       .upsert({ user_id: userId, role } as never, { onConflict: "user_id" });
     if (error) throw new Error(`فشل تحديث دور الإدارة: ${error.message}`);
   }
+
+  await logAdminAction({
+    action: "set_admin_role",
+    entityType: "user",
+    entityId: userId,
+    payload: {
+      role,
+      source: "dashboard",
+    },
+  });
 
   revalidatePath("/dashboard/users");
 }
@@ -321,6 +344,16 @@ export async function deleteUser(userId: string): Promise<void> {
 
   const { error } = await supabase.auth.admin.deleteUser(userId);
   if (error) throw new Error(`فشل حذف الحساب: ${error.message}`);
+
+  await logAdminAction({
+    action: "delete_user",
+    entityType: targetAdminRole ? "admin_user" : "user",
+    entityId: userId,
+    payload: {
+      admin_role: targetAdminRole ?? null,
+      source: "dashboard",
+    },
+  });
 
   revalidatePath("/dashboard/users");
   revalidatePath("/dashboard/providers");

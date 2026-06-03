@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAdminAction } from "@/lib/admin/audit";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -30,6 +31,17 @@ export async function setAppealStatus(
     console.error("[setAppealStatus] error:", error);
     throw new Error(`فشل تحديث الطعن: ${error.message}`);
   }
+
+  await logAdminAction({
+    action: "set_appeal_status",
+    entityType: "appeal",
+    entityId: appealId,
+    payload: {
+      status,
+      note: note?.trim() || null,
+      source: "dashboard",
+    },
+  });
   revalidatePath("/dashboard/appeals");
   revalidatePath("/dashboard/places");
 }

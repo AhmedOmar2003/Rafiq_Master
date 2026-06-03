@@ -13,7 +13,8 @@ export type ActivityKind =
   | "approve" | "reject" | "suspend" | "pending"
   | "subscription" | "signup" | "appeal"
   | "review" | "report" | "campaign" | "place_open"
-  | "favorite" | "map_open" | "campaign_click";
+  | "favorite" | "map_open" | "campaign_click"
+  | "campaign_impression" | "admin_action";
 
 export type ActivityRow = {
   id: string;
@@ -39,6 +40,8 @@ const KIND_CFG: Record<ActivityKind, { label: string; color: string; bg: string;
   favorite:     { label: "مفضلة",       color: "#db2777", bg: "rgba(219,39,119,0.12)", icon: Heart },
   map_open:     { label: "خريطة",       color: "#0284c7", bg: "rgba(2,132,199,0.12)",  icon: Navigation },
   campaign_click:{ label: "نقرة إعلان", color: "#9333ea", bg: "rgba(147,51,234,0.12)", icon: MousePointerClick },
+  campaign_impression:{ label: "ظهور إعلان", color: "#7c3aed", bg: "rgba(124,58,237,0.12)", icon: Megaphone },
+  admin_action: { label: "إجراء إداري", color: "#4b5563", bg: "rgba(75,85,99,0.12)", icon: ActivityIcon },
 };
 
 const KIND_OPTIONS = [
@@ -55,6 +58,8 @@ const KIND_OPTIONS = [
   { label: "المفضلة",      value: "favorite" as const },
   { label: "الخريطة",      value: "map_open" as const },
   { label: "نقرات الإعلانات", value: "campaign_click" as const },
+  { label: "ظهور الإعلانات", value: "campaign_impression" as const },
+  { label: "إجراءات الأدمن", value: "admin_action" as const },
 ];
 
 export default function ActivityFeed({ events }: { events: ActivityRow[] }) {

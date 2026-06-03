@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAdminAction } from "@/lib/admin/audit";
 import { revalidatePath } from "next/cache";
 
 export async function setReportStatus(
@@ -26,5 +27,16 @@ export async function setReportStatus(
     console.error("[setReportStatus]", error);
     throw new Error(`فشل تحديث البلاغ: ${error.message}`);
   }
+
+  await logAdminAction({
+    action: "set_report_status",
+    entityType: "report",
+    entityId: reportId,
+    payload: {
+      status,
+      note: note?.trim() || null,
+      source: "dashboard",
+    },
+  });
   revalidatePath("/dashboard/reports");
 }
