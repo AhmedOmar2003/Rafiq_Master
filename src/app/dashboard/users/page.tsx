@@ -101,7 +101,7 @@ export default async function UsersPage() {
       {/* Stats */}
       <div className={s.statsRow}>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(104,31,0,0.10)", color: "#681F00" }}>
+          <div className={`${s.statIcon} ${s.statIconPrimary}`}>
             <Users size={22} />
           </div>
           <div className={s.statBody}>
@@ -110,7 +110,7 @@ export default async function UsersPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(139,92,246,0.12)", color: "#7c3aed" }}>
+          <div className={`${s.statIcon} ${s.statIconPurple}`}>
             <Shield size={22} />
           </div>
           <div className={s.statBody}>
@@ -119,7 +119,7 @@ export default async function UsersPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(59,130,246,0.12)", color: "#2563eb" }}>
+          <div className={`${s.statIcon} ${s.statIconInfo}`}>
             <Store size={22} />
           </div>
           <div className={s.statBody}>
@@ -128,7 +128,7 @@ export default async function UsersPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(20,184,166,0.12)", color: "#0d9488" }}>
+          <div className={`${s.statIcon} ${s.statIconTeal}`}>
             <UserCheck size={22} />
           </div>
           <div className={s.statBody}>
@@ -137,7 +137,7 @@ export default async function UsersPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+          <div className={`${s.statIcon} ${s.statIconSuccess}`}>
             <UserCheck size={22} />
           </div>
           <div className={s.statBody}>

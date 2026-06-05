@@ -6,6 +6,7 @@ import {
   Search, X, ChevronDown, ShieldAlert, MapPin, User, Mail, Hourglass,
   CheckCircle2, XCircle, ChevronRight, AlertCircle, Eye,
 } from "lucide-react";
+import { StatusBadge } from "@/components/ui";
 import s from "../shared.module.css";
 
 export type ReportStatus = "open" | "reviewed" | "actioned" | "dismissed";
@@ -43,13 +44,6 @@ const STATUS_OPTIONS = [
   { label: "تم اتخاذ إجراء", value: "actioned" as const },
   { label: "مرفوض", value: "dismissed" as const },
 ];
-
-const STATUS_CFG: Record<ReportStatus, { label: string; color: string; bg: string }> = {
-  open:      { label: "مفتوح",            color: "#d97706", bg: "rgba(217,119,6,0.10)" },
-  reviewed:  { label: "تمت المراجعة",     color: "#2563eb", bg: "rgba(37,99,235,0.10)" },
-  actioned:  { label: "تم اتخاذ إجراء",   color: "#16a34a", bg: "rgba(22,163,74,0.10)" },
-  dismissed: { label: "مرفوض",             color: "#6b7280", bg: "rgba(107,114,128,0.10)" },
-};
 
 const REPORTER_KIND_LABEL: Record<ReportRow["reporterKind"], string> = {
   regular_user: "مستخدم فقط",
@@ -98,8 +92,9 @@ export default function ReportsList({
         <div className={s.searchWrapper}>
           <Search size={16} className={s.searchIcon} />
           <input
-            type="text"
+            type="search"
             placeholder="ابحث في البلاغات…"
+            aria-label="البحث في البلاغات"
             value={search}
             className={s.searchInput}
             onChange={(e) => setSearch(e.target.value)}
@@ -149,23 +144,19 @@ export default function ReportsList({
         ) : (
           filtered.map((r) => {
             const isOpen = expanded === r.id;
-            const cfg = STATUS_CFG[r.status];
             return (
               <div key={r.id} className={s.tableCard} style={{ padding: 0 }}>
                 <button
                   onClick={() => setExpanded(isOpen ? null : r.id)}
+                  aria-expanded={isOpen}
+                  aria-label={`${REASON_LABELS[r.reasonCode] ?? r.reasonCode} — ${isOpen ? "إغلاق" : "عرض التفاصيل"}`}
                   style={{
                     width: "100%", background: "none", border: "none",
                     padding: "1rem 1.25rem", cursor: "pointer", textAlign: "right",
                     display: "flex", alignItems: "center", gap: "0.85rem",
                   }}
                 >
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 10,
-                    background: cfg.bg, color: cfg.color,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>
+                  <div className={`${s.statIcon} ${s.statIconPrimary}`} style={{ flexShrink: 0 }}>
                     <ShieldAlert size={18} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -173,9 +164,7 @@ export default function ReportsList({
                       <span style={{ fontWeight: 800, fontSize: "0.95rem" }}>
                         {REASON_LABELS[r.reasonCode] ?? r.reasonCode}
                       </span>
-                      <span className={s.badge} style={{ background: cfg.bg, color: cfg.color, fontSize: "0.7rem" }}>
-                        {cfg.label}
-                      </span>
+                      <StatusBadge status={r.status} />
                     </div>
                     <div style={{
                       fontSize: "0.8rem", color: "var(--color-text-tertiary)",

@@ -65,6 +65,10 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
 
   return (
     <div className={styles.dashboardLayout}>
+      {/* Skip link — lets keyboard users jump straight to page content */}
+      <a href="#main-content" className={styles.skipLink}>
+        تخطى للمحتوى الرئيسي
+      </a>
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
@@ -90,6 +94,7 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={styles.collapseBtn}
+            aria-label={isCollapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية"}
             title={isCollapsed ? "توسيع" : "طي"}
           >
             <ChevronLeft
@@ -115,6 +120,7 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
                 key={item.href}
                 href={item.href}
                 className={`${styles.navItem} ${isActive ? styles.navItemActive : ""}`}
+                aria-current={isActive ? "page" : undefined}
                 title={isCollapsed ? item.name : undefined}
               >
                 <div className={styles.navItemIcon}>
@@ -162,6 +168,8 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className={`${styles.iconBtn} ${styles.menuBtn}`}
+              aria-label={isSidebarOpen ? "إغلاق القائمة" : "فتح القائمة"}
+              aria-expanded={isSidebarOpen}
             >
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -178,19 +186,23 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
             )}
 
             <div className={styles.searchContainer}>
-              <Search className={styles.searchIcon} size={15} />
+              <Search className={styles.searchIcon} size={15} aria-hidden="true" />
               <input
-                type="text"
+                type="search"
                 placeholder="ابحث في الداشبورد..."
                 className={styles.searchInput}
+                aria-label="البحث في لوحة التحكم"
               />
             </div>
           </div>
 
           <div className={styles.topbarRight}>
-            <button className={`${styles.iconBtn} ${styles.bellBtn}`}>
-              <Bell size={19} />
-              <span className={styles.badge}>3</span>
+            <button
+              className={`${styles.iconBtn} ${styles.bellBtn}`}
+              aria-label="الإشعارات"
+              title="الإشعارات"
+            >
+              <Bell size={19} aria-hidden="true" />
             </button>
 
             <div className={styles.topbarDivider} />
@@ -206,7 +218,9 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
         </header>
 
         {/* Page Content */}
-        <div className={styles.pageContainer}>{children}</div>
+        <main id="main-content" className={styles.pageContainer}>
+          {children}
+        </main>
       </main>
 
       {/* ── Logout Modal ── */}

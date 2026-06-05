@@ -2,6 +2,24 @@
    Dashboard Layout — Premium CSS (Updated)
 ══════════════════════════════════════════════════════════ */
 
+/* ── Skip Link ── */
+.skipLink {
+  position: absolute;
+  top: -100%;
+  right: 0;
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  text-decoration: none;
+  transition: top 0.15s;
+}
+
+.skipLink:focus { top: 0; }
+
 .dashboardLayout {
   display: flex;
   height: 100vh;

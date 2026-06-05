@@ -493,6 +493,31 @@
   flex-shrink: 0;
 }
 
+/* ── Range Chips (date range selector on overview page) ── */
+.rangeChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.82rem;
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.rangeChip:hover {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.rangeChipActive {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
 /* ── Responsive ── */
 @media (max-width: 1280px) {
   .statsGrid {

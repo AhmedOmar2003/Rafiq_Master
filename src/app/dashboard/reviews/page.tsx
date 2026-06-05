@@ -69,10 +69,7 @@ export default async function ReviewsPage() {
       {/* Stats */}
       <div className={s.statsRow}>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(245,158,11,0.12)", color: "#b45309" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconWarning}`}>
             <Star size={22} />
           </div>
           <div className={s.statBody}>
@@ -81,10 +78,7 @@ export default async function ReviewsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(104,31,0,0.10)", color: "#681F00" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconPrimary}`}>
             <Star size={22} />
           </div>
           <div className={s.statBody}>
@@ -94,10 +88,7 @@ export default async function ReviewsPage() {
         </div>
         {dist.slice(2).map(({ star, count }) => (
           <div className={s.statCard} key={star}>
-            <div
-              className={s.statIcon}
-              style={{ background: "rgba(245,158,11,0.08)", color: "#d97706" }}
-            >
+            <div className={`${s.statIcon} ${s.statIconWarning}`}>
               {"★".repeat(star)}
             </div>
             <div className={s.statBody}>

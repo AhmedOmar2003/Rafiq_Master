@@ -110,7 +110,7 @@ export default async function SettingsPage() {
         {/* ── App Info ── */}
         <section className={ls.card}>
           <div className={ls.cardHeader}>
-            <div className={ls.cardIcon} style={{ background: "rgba(104,31,0,0.1)", color: "#681F00" }}>
+            <div className={`${ls.cardIcon} ${ls.cardIconPrimary}`}>
               <Info size={20} />
             </div>
             <div>
@@ -153,7 +153,7 @@ export default async function SettingsPage() {
         {/* ── Database Stats ── */}
         <section className={ls.card}>
           <div className={ls.cardHeader}>
-            <div className={ls.cardIcon} style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
+            <div className={`${ls.cardIcon} ${ls.cardIconSuccess}`}>
               <Database size={20} />
             </div>
             <div>
@@ -163,8 +163,8 @@ export default async function SettingsPage() {
           </div>
           <div className={ls.dbStats}>
             <div className={ls.dbStatItem}>
-              <div className={ls.dbStatIcon} style={{ background: "rgba(104,31,0,0.08)" }}>
-                <MapPin size={18} style={{ color: "#681F00" }} />
+              <div className={`${ls.dbStatIcon} ${ls.dbStatIconPrimary}`}>
+                <MapPin size={18} />
               </div>
               <div>
                 <div className={ls.dbStatVal}>{placesCount ?? 0}</div>
@@ -172,8 +172,8 @@ export default async function SettingsPage() {
               </div>
             </div>
             <div className={ls.dbStatItem}>
-              <div className={ls.dbStatIcon} style={{ background: "rgba(245,158,11,0.08)" }}>
-                <Star size={18} style={{ color: "#d97706" }} />
+              <div className={`${ls.dbStatIcon} ${ls.dbStatIconWarning}`}>
+                <Star size={18} />
               </div>
               <div>
                 <div className={ls.dbStatVal}>{reviewsCount ?? 0}</div>
@@ -181,8 +181,8 @@ export default async function SettingsPage() {
               </div>
             </div>
             <div className={ls.dbStatItem}>
-              <div className={ls.dbStatIcon} style={{ background: "rgba(99,102,241,0.08)" }}>
-                <Users size={18} style={{ color: "#6366f1" }} />
+              <div className={`${ls.dbStatIcon} ${ls.dbStatIconIndigo}`}>
+                <Users size={18} />
               </div>
               <div>
                 <div className={ls.dbStatVal}>{usersCount}</div>
@@ -195,7 +195,7 @@ export default async function SettingsPage() {
         {/* ── Admin Profile ── */}
         <section className={ls.card}>
           <div className={ls.cardHeader}>
-            <div className={ls.cardIcon} style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1" }}>
+            <div className={`${ls.cardIcon} ${ls.cardIconIndigo}`}>
               <User size={20} />
             </div>
             <div>
@@ -231,7 +231,7 @@ export default async function SettingsPage() {
         {/* ── Backend-backed Moderation Controls ── */}
         <section className={ls.card}>
           <div className={ls.cardHeader}>
-            <div className={ls.cardIcon} style={{ background: "rgba(2,132,199,0.1)", color: "#0284c7" }}>
+            <div className={`${ls.cardIcon} ${ls.cardIconInfo}`}>
               <Clock3 size={20} />
             </div>
             <div>
@@ -274,7 +274,7 @@ export default async function SettingsPage() {
         {/* ── Notifications ── */}
         <section className={`${ls.card} ${ls.cardFull}`}>
           <div className={ls.cardHeader}>
-            <div className={ls.cardIcon} style={{ background: "rgba(245,158,11,0.1)", color: "#d97706" }}>
+            <div className={`${ls.cardIcon} ${ls.cardIconWarning}`}>
               <Bell size={20} />
             </div>
             <div>
@@ -319,7 +319,7 @@ export default async function SettingsPage() {
         {/* ── Support / Branding ── */}
         <section className={`${ls.card} ${ls.cardFull}`}>
           <div className={ls.cardHeader}>
-            <div className={ls.cardIcon} style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1" }}>
+            <div className={`${ls.cardIcon} ${ls.cardIconIndigo}`}>
               <AppWindow size={20} />
             </div>
             <div>

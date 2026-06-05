@@ -1,6 +1,7 @@
 import { Megaphone, CheckCircle2, Clock3, MousePointerClick } from "lucide-react";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { StatusBadge } from "@/components/ui";
 import s from "../shared.module.css";
 import {
   approveCampaign,
@@ -52,46 +53,12 @@ type ProviderRow = {
 
 function kindLabel(kind: string) {
   switch (kind) {
-    case "featured":
-      return "ظهور مميز";
-    case "spotlight":
-      return "سبوت لايت";
-    case "push_notification":
-      return "إشعار";
-    case "discount":
-      return "خصم";
-    default:
-      return "حملة";
+    case "featured":       return "ظهور مميز";
+    case "spotlight":      return "سبوت لايت";
+    case "push_notification": return "إشعار";
+    case "discount":       return "خصم";
+    default:               return "حملة";
   }
-}
-
-function statusBadge(status: string) {
-  const map: Record<string, { label: string; bg: string; fg: string }> = {
-    active: { label: "نشط", bg: "rgba(16,185,129,0.12)", fg: "#10b981" },
-    pending_review: { label: "قيد المراجعة", bg: "rgba(217,119,6,0.12)", fg: "#d97706" },
-    rejected: { label: "مرفوض", bg: "rgba(220,38,38,0.12)", fg: "#dc2626" },
-    paused: { label: "موقوف", bg: "rgba(75,85,99,0.12)", fg: "#4b5563" },
-    ended: { label: "منتهي", bg: "rgba(75,85,99,0.12)", fg: "#4b5563" },
-    draft: { label: "مسودة", bg: "rgba(59,130,246,0.12)", fg: "#2563eb" },
-  };
-  const cfg = map[status] ?? map.draft;
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "0.3rem 0.65rem",
-        borderRadius: 999,
-        background: cfg.bg,
-        color: cfg.fg,
-        fontSize: "0.78rem",
-        fontWeight: 800,
-      }}
-    >
-      {cfg.label}
-    </span>
-  );
 }
 
 export default async function CampaignsPage() {
@@ -150,7 +117,7 @@ export default async function CampaignsPage() {
 
       <div className={s.statsRow}>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(104,31,0,0.10)", color: "#681F00" }}>
+          <div className={`${s.statIcon} ${s.statIconPrimary}`}>
             <Megaphone size={22} />
           </div>
           <div className={s.statBody}>
@@ -159,7 +126,7 @@ export default async function CampaignsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(217,119,6,0.12)", color: "#d97706" }}>
+          <div className={`${s.statIcon} ${s.statIconWarning}`}>
             <Clock3 size={22} />
           </div>
           <div className={s.statBody}>
@@ -168,7 +135,7 @@ export default async function CampaignsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+          <div className={`${s.statIcon} ${s.statIconSuccess}`}>
             <CheckCircle2 size={22} />
           </div>
           <div className={s.statBody}>
@@ -177,7 +144,7 @@ export default async function CampaignsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon} style={{ background: "rgba(59,130,246,0.12)", color: "#2563eb" }}>
+          <div className={`${s.statIcon} ${s.statIconInfo}`}>
             <Clock3 size={22} />
           </div>
           <div className={s.statBody}>
@@ -188,16 +155,17 @@ export default async function CampaignsPage() {
       </div>
 
       <div className={s.tableCard}>
+        <div className={s.tableWrapper}>
         <table className={s.table}>
           <thead>
             <tr>
-              <th>الإعلان</th>
-              <th>المكان</th>
-              <th>مقدم الخدمة</th>
-              <th>النوع</th>
-              <th>الحالة</th>
-              <th>الأداء</th>
-              <th>المراجعة</th>
+              <th scope="col">الإعلان</th>
+              <th scope="col">المكان</th>
+              <th scope="col">مقدم الخدمة</th>
+              <th scope="col">النوع</th>
+              <th scope="col">الحالة</th>
+              <th scope="col">الأداء</th>
+              <th scope="col">المراجعة</th>
             </tr>
           </thead>
           <tbody>
@@ -227,27 +195,13 @@ export default async function CampaignsPage() {
                             src={row.image_path}
                             alt={row.title}
                             style={{
-                              width: 46,
-                              height: 46,
+                              width: 46, height: 46,
                               borderRadius: "var(--radius-sm)",
-                              objectFit: "cover",
-                              flexShrink: 0,
+                              objectFit: "cover", flexShrink: 0,
                             }}
                           />
                         ) : (
-                          <div
-                            style={{
-                              width: 46,
-                              height: 46,
-                              borderRadius: "var(--radius-sm)",
-                              background: "rgba(104,31,0,0.08)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: "#681F00",
-                              flexShrink: 0,
-                            }}
-                          >
+                          <div className={`${s.statIcon} ${s.statIconPrimary}`} style={{ flexShrink: 0 }}>
                             <Megaphone size={18} />
                           </div>
                         )}
@@ -276,7 +230,7 @@ export default async function CampaignsPage() {
                       </div>
                     </td>
                     <td>{kindLabel(row.kind)}</td>
-                    <td>{statusBadge(row.status)}</td>
+                    <td><StatusBadge status={row.status} /></td>
                     <td>
                       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -303,16 +257,7 @@ export default async function CampaignsPage() {
                               : "تمت المراجعة"}
                         </span>
                         {row.edit_request_note?.trim() && (
-                          <div
-                            style={{
-                              background: "rgba(59,130,246,0.08)",
-                              border: "1px solid rgba(59,130,246,0.14)",
-                              borderRadius: 10,
-                              padding: "0.75rem",
-                              color: "#1d4ed8",
-                              fontSize: "0.82rem",
-                            }}
-                          >
+                          <div className={s.noteBox}>
                             <strong>ملاحظة المزوّد:</strong> {row.edit_request_note}
                           </div>
                         )}
@@ -329,27 +274,9 @@ export default async function CampaignsPage() {
                                 name="reason"
                                 rows={2}
                                 placeholder="اكتب سبب الرفض الذي سيظهر لمقدم الخدمة"
-                                style={{
-                                  width: "100%",
-                                  marginBottom: 8,
-                                  padding: "0.75rem",
-                                  borderRadius: "10px",
-                                  border: "1px solid var(--color-border, #e5e7eb)",
-                                  fontFamily: "inherit",
-                                }}
+                                className={s.reviewTextarea}
                               />
-                              <button
-                                type="submit"
-                                style={{
-                                  background: "rgba(220,38,38,0.12)",
-                                  color: "#dc2626",
-                                  border: "none",
-                                  borderRadius: 10,
-                                  padding: "0.7rem 1rem",
-                                  fontWeight: 800,
-                                  cursor: "pointer",
-                                }}
-                              >
+                              <button type="submit" className={s.dangerBtn}>
                                 رفض الإعلان
                               </button>
                             </form>
@@ -363,14 +290,7 @@ export default async function CampaignsPage() {
                                 name="response"
                                 rows={2}
                                 placeholder="رسالة اختيارية ستظهر للمزوّد عند فتح التعديل"
-                                style={{
-                                  width: "100%",
-                                  marginBottom: 8,
-                                  padding: "0.75rem",
-                                  borderRadius: "10px",
-                                  border: "1px solid var(--color-border, #e5e7eb)",
-                                  fontFamily: "inherit",
-                                }}
+                                className={s.reviewTextarea}
                               />
                               <button className={s.primaryBtn} type="submit">
                                 افتح التعديل للمزوّد
@@ -382,27 +302,9 @@ export default async function CampaignsPage() {
                                 name="reason"
                                 rows={2}
                                 placeholder="اكتب سبب رفض طلب التعديل"
-                                style={{
-                                  width: "100%",
-                                  marginBottom: 8,
-                                  padding: "0.75rem",
-                                  borderRadius: "10px",
-                                  border: "1px solid var(--color-border, #e5e7eb)",
-                                  fontFamily: "inherit",
-                                }}
+                                className={s.reviewTextarea}
                               />
-                              <button
-                                type="submit"
-                                style={{
-                                  background: "rgba(220,38,38,0.12)",
-                                  color: "#dc2626",
-                                  border: "none",
-                                  borderRadius: 10,
-                                  padding: "0.7rem 1rem",
-                                  fontWeight: 800,
-                                  cursor: "pointer",
-                                }}
-                              >
+                              <button type="submit" className={s.dangerBtn}>
                                 رفض طلب التعديل
                               </button>
                             </form>
@@ -416,6 +318,7 @@ export default async function CampaignsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

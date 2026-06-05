@@ -6,6 +6,7 @@ import {
   Search, X, ChevronDown, Gavel, Phone, Mail, MessageSquare, MapPin,
   CheckCircle2, XCircle, Hourglass, Store, ChevronRight, AlertCircle,
 } from "lucide-react";
+import { StatusBadge } from "@/components/ui";
 import s from "../shared.module.css";
 
 export type AppealStatus = "pending" | "reviewing" | "resolved" | "rejected";
@@ -93,8 +94,8 @@ export default function AppealsList({
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button className={s.clearSearch} onClick={() => setSearch("")}>
-              <X size={14} />
+            <button className={s.clearSearch} onClick={() => setSearch("")} aria-label="مسح البحث">
+              <X size={14} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -209,57 +210,35 @@ function AppealCard({
   onSetStatus: (status: AppealStatus) => void;
   pending: boolean;
 }) {
-  const statusCfg = STATUS_BADGE[appeal.status];
   return (
     <div className={s.tableCard} style={{ padding: 0 }}>
       {/* Header (always visible, clickable) */}
       <button
         onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-label={`${appeal.contactName} — ${isOpen ? "إغلاق" : "عرض التفاصيل"}`}
         style={{
-          width: "100%",
-          background: "none",
-          border: "none",
-          padding: "1.1rem 1.25rem",
-          cursor: "pointer",
-          textAlign: "right",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.85rem",
+          width: "100%", background: "none", border: "none",
+          padding: "1.1rem 1.25rem", cursor: "pointer",
+          textAlign: "right", display: "flex",
+          alignItems: "center", gap: "0.85rem",
         }}
       >
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 10,
-            background: "rgba(104,31,0,0.10)",
-            color: "#681F00",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
+        <div className={`${s.statIcon} ${s.statIconPrimary}`} style={{ flexShrink: 0 }}>
           <Gavel size={20} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: 2 }}>
             <span
               style={{
-                fontWeight: 800,
-                fontSize: "0.95rem",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                maxWidth: 380,
+                fontWeight: 800, fontSize: "0.95rem",
+                overflow: "hidden", textOverflow: "ellipsis",
+                whiteSpace: "nowrap", maxWidth: 380,
               }}
             >
               {appeal.contactName}
             </span>
-            <span className={`${s.badge} ${s[statusCfg.cls] ?? ""}`}>
-              {statusCfg.icon}
-              {statusCfg.label}
-            </span>
+            <StatusBadge status={appeal.status} />
           </div>
           <div
             style={{
@@ -556,28 +535,3 @@ function ActionButton({
   );
 }
 
-const STATUS_BADGE: Record<
-  AppealStatus,
-  { label: string; cls: string; icon: React.ReactNode }
-> = {
-  pending: {
-    label: "في الانتظار",
-    cls: "badgeGold",
-    icon: <Hourglass size={11} />,
-  },
-  reviewing: {
-    label: "قيد المراجعة",
-    cls: "badgePrimary",
-    icon: <Hourglass size={11} />,
-  },
-  resolved: {
-    label: "تم الحل",
-    cls: "badgeSuccess",
-    icon: <CheckCircle2 size={11} />,
-  },
-  rejected: {
-    label: "مرفوض",
-    cls: "badgeDanger",
-    icon: <XCircle size={11} />,
-  },
-};

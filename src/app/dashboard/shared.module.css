@@ -2,6 +2,13 @@
    shared.module.css — Design System موحد لكل صفحات الداش بورد
    ════════════════════════════════════════════════════════ */
 
+/* ── Responsive Table Wrapper ───────────────────────── */
+/* Wrap <table> with this so wide tables scroll horizontally on mobile */
+.tableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ── Page Shell ─────────────────────────────────────── */
 .page {
   display: flex;
@@ -545,6 +552,13 @@
   color: var(--color-danger);
 }
 
+.actionBtnApprove { background: rgba(16,185,129,0.12); color: #10b981; }
+.actionBtnApprove:hover { background: rgba(16,185,129,0.22); }
+.actionBtnReject  { background: rgba(220,38,38,0.12);  color: #dc2626; }
+.actionBtnReject:hover  { background: rgba(220,38,38,0.22);  }
+.actionBtnPending { background: rgba(217,119,6,0.12);  color: #d97706; }
+.actionBtnPending:hover { background: rgba(217,119,6,0.22);  }
+
 /* ── Empty State ────────────────────────────────────── */
 .emptyState {
   display: flex;
@@ -593,6 +607,83 @@ button:focus-visible,
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
+
+/* ── Stat Icon Color Variants ───────────────────────────── */
+/* Replace inline style={{ background: "rgba(…)", color: "#…" }} on .statIcon */
+.statIconPrimary { background: var(--color-primary-alpha); color: var(--color-primary); }
+.statIconSuccess { background: var(--color-success-alpha); color: var(--color-success); }
+.statIconWarning { background: rgba(217,119,6,0.12);       color: var(--color-warning);  }
+.statIconDanger  { background: var(--color-danger-alpha);  color: var(--color-danger);   }
+.statIconInfo    { background: rgba(59,130,246,0.12);      color: #2563eb;               }
+.statIconPurple  { background: rgba(139,92,246,0.12);      color: #7c3aed;               }
+.statIconTeal    { background: rgba(20,184,166,0.12);      color: #0d9488;               }
+
+/* ── Admin Review Action UI ─────────────────────────────── */
+
+.dangerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.6rem 1rem;
+  background: var(--color-danger-alpha);
+  color: var(--color-danger);
+  border: 1.5px solid rgba(220, 38, 38, 0.28);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.88rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.dangerBtn:hover { background: rgba(220, 38, 38, 0.18); }
+.dangerBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.noteBox {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  color: #1d4ed8;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.reviewTextarea {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-gray-lighter);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  resize: vertical;
+  min-height: 72px;
+  direction: rtl;
+  background: var(--color-background);
+  color: var(--color-black);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.reviewTextarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+  background: var(--color-surface);
+}
+
+.reviewTextarea::placeholder { color: var(--color-gray); }
+
+/* ── Avatar Color Variants ──────────────────────────── */
+.avatarPrimary { background: rgba(104,31,0,0.10); color: #681F00; }
+
+/* ── Inline Cell Helpers ────────────────────────────── */
+.inlineFlexRow     { display: inline-flex; align-items: center; gap: 6px; }
+.inlineFlexRowBold { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.cancelWarning     { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--color-warning, #d97706); margin-top: 4px; }
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 768px) {

@@ -168,10 +168,7 @@ export default async function SubscriptionsPage() {
 
       <div className={s.statsRow}>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(104,31,0,0.10)", color: "#681F00" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconPrimary}`}>
             <CreditCard size={22} />
           </div>
           <div className={s.statBody}>
@@ -180,10 +177,7 @@ export default async function SubscriptionsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(139,92,246,0.12)", color: "#7c3aed" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconPurple}`}>
             <Crown size={22} />
           </div>
           <div className={s.statBody}>
@@ -192,10 +186,7 @@ export default async function SubscriptionsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(217,119,6,0.12)", color: "#b45309" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconWarning}`}>
             <Crown size={22} />
           </div>
           <div className={s.statBody}>
@@ -204,10 +195,7 @@ export default async function SubscriptionsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconSuccess}`}>
             <Banknote size={22} />
           </div>
           <div className={s.statBody}>
@@ -218,10 +206,7 @@ export default async function SubscriptionsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(245,158,11,0.12)", color: "#d97706" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconWarning}`}>
             <TrendingUp size={22} />
           </div>
           <div className={s.statBody}>
@@ -232,10 +217,7 @@ export default async function SubscriptionsPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(59,130,246,0.12)", color: "#2563eb" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconInfo}`}>
             <Repeat size={22} />
           </div>
           <div className={s.statBody}>

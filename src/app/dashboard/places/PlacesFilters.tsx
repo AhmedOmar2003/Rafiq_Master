@@ -500,8 +500,7 @@ export default function PlacesFilters({
                           <form action={setStatusAction.bind(null, place.place_id, "approved", undefined, undefined)}>
                             <button
                               type="submit"
-                              className={`${s.actionBtn}`}
-                              style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}
+                              className={`${s.actionBtn} ${s.actionBtnApprove}`}
                               title="اعتماد"
                             >
                               <CheckCircle2 size={16} />
@@ -511,8 +510,7 @@ export default function PlacesFilters({
                         {setStatusAction && (place.status ?? "pending") !== "rejected" && (
                           <button
                             type="button"
-                            className={`${s.actionBtn}`}
-                            style={{ background: "rgba(220,38,38,0.12)", color: "#dc2626" }}
+                            className={`${s.actionBtn} ${s.actionBtnReject}`}
                             title="رفض مع كتابة السبب"
                             onClick={() => {
                               setRejectTarget(place);
@@ -527,8 +525,7 @@ export default function PlacesFilters({
                           <form action={setStatusAction.bind(null, place.place_id, "pending", undefined, undefined)}>
                             <button
                               type="submit"
-                              className={`${s.actionBtn}`}
-                              style={{ background: "rgba(217,119,6,0.12)", color: "#d97706" }}
+                              className={`${s.actionBtn} ${s.actionBtnPending}`}
                               title="إعادة للمراجعة"
                             >
                               <Hourglass size={16} />

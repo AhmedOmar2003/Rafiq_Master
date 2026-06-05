@@ -95,14 +95,19 @@ export default function SubscriptionsFilters({
         <div className={s.searchWrapper}>
           <Search size={16} className={s.searchIcon} />
           <input
-            type="text"
+            type="search"
+            aria-label="ابحث باسم النشاط أو البريد الإلكتروني"
             placeholder="ابحث باسم النشاط..."
             value={search}
             className={s.searchInput}
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button className={s.clearSearch} onClick={() => setSearch("")}>
+            <button
+              className={s.clearSearch}
+              aria-label="مسح البحث"
+              onClick={() => setSearch("")}
+            >
               <X size={14} />
             </button>
           )}
@@ -111,6 +116,8 @@ export default function SubscriptionsFilters({
         <div className={s.dropdownWrapper}>
           <button
             className={`${s.dropdownTrigger} ${tier !== "all" ? s.active : ""}`}
+            aria-expanded={tierOpen}
+            aria-label="تصفية حسب الخطة"
             onClick={() => setTierOpen((v) => !v)}
           >
             <Crown size={14} />
@@ -145,6 +152,8 @@ export default function SubscriptionsFilters({
             className={`${s.dropdownTrigger} ${
               cycle !== "all" ? s.active : ""
             }`}
+            aria-expanded={cycleOpen}
+            aria-label="تصفية حسب دورة الدفع"
             onClick={() => setCycleOpen((v) => !v)}
           >
             <Repeat size={14} />
@@ -183,15 +192,16 @@ export default function SubscriptionsFilters({
       </div>
 
       <div className={s.tableCard}>
+        <div className={s.tableWrapper}>
         <table className={s.table}>
           <thead>
             <tr>
-              <th>المشترك</th>
-              <th>الخطة</th>
-              <th>الدورة</th>
-              <th>المبلغ</th>
-              <th>المصدر</th>
-              <th>ينتهي في</th>
+              <th scope="col">المشترك</th>
+              <th scope="col">الخطة</th>
+              <th scope="col">الدورة</th>
+              <th scope="col">المبلغ</th>
+              <th scope="col">المصدر</th>
+              <th scope="col">ينتهي في</th>
             </tr>
           </thead>
           <tbody>
@@ -225,13 +235,7 @@ export default function SubscriptionsFilters({
                   <tr key={sub.id}>
                     <td>
                       <div className={s.infoCell}>
-                        <div
-                          className={s.avatar}
-                          style={{
-                            background: "rgba(104,31,0,0.10)",
-                            color: "#681F00",
-                          }}
-                        >
+                        <div className={`${s.avatar} ${s.avatarPrimary}`}>
                           {sub.providerName.slice(0, 1).toUpperCase()}
                         </div>
                         <div className={s.infoCellBody}>
@@ -267,26 +271,13 @@ export default function SubscriptionsFilters({
                       </span>
                     </td>
                     <td>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
+                      <span className={s.inlineFlexRow}>
                         <Repeat size={13} style={{ color: "var(--color-gray)" }} />
                         {sub.yearly ? "سنوي" : "شهري"}
                       </span>
                     </td>
                     <td dir="ltr">
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          fontWeight: 600,
-                        }}
-                      >
+                      <span className={s.inlineFlexRowBold}>
                         <Wallet size={13} style={{ color: "var(--color-gray)" }} />
                         {sub.amountEgp.toLocaleString("en-EG")} ج.م
                       </span>
@@ -296,29 +287,14 @@ export default function SubscriptionsFilters({
                         {gatewayLabel(sub.gateway, sub.source)}
                       </span>
                       {sub.cancelAtPeriodEnd && (
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            fontSize: "0.72rem",
-                            color: "#d97706",
-                            marginTop: 4,
-                          }}
-                        >
+                        <div className={s.cancelWarning}>
                           <AlertTriangle size={11} />
                           سيُلغى في نهاية الفترة
                         </div>
                       )}
                     </td>
                     <td dir="ltr">
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
+                      <span className={s.inlineFlexRow}>
                         <CalendarRange
                           size={13}
                           style={{ color: "var(--color-gray)" }}
@@ -334,6 +310,7 @@ export default function SubscriptionsFilters({
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </>
   );

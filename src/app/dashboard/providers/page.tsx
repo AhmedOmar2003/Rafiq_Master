@@ -153,10 +153,7 @@ export default async function ProvidersPage() {
 
       <div className={s.statsRow}>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(104,31,0,0.10)", color: "#681F00" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconPrimary}`}>
             <Store size={22} />
           </div>
           <div className={s.statBody}>
@@ -165,10 +162,7 @@ export default async function ProvidersPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconSuccess}`}>
             <CheckCircle2 size={22} />
           </div>
           <div className={s.statBody}>
@@ -177,10 +171,7 @@ export default async function ProvidersPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(239,68,68,0.12)", color: "#dc2626" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconDanger}`}>
             <Hourglass size={22} />
           </div>
           <div className={s.statBody}>
@@ -189,10 +180,7 @@ export default async function ProvidersPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(139,92,246,0.12)", color: "#7c3aed" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconPurple}`}>
             <Crown size={22} />
           </div>
           <div className={s.statBody}>
@@ -201,10 +189,7 @@ export default async function ProvidersPage() {
           </div>
         </div>
         <div className={s.statCard}>
-          <div
-            className={s.statIcon}
-            style={{ background: "rgba(59,130,246,0.12)", color: "#2563eb" }}
-          >
+          <div className={`${s.statIcon} ${s.statIconInfo}`}>
             <Sparkles size={22} />
           </div>
           <div className={s.statBody}>
