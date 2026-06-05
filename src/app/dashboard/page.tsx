@@ -336,7 +336,15 @@ export default async function DashboardOverview({
                   key={days}
                   href={buildRangeHref(days)}
                   aria-current={active ? "page" : undefined}
-                  className={`${styles.rangeChip}${active ? ` ${styles.rangeChipActive}` : ""}`}
+                  style={{
+                    padding: "0.45rem 0.8rem",
+                    borderRadius: 999,
+                    textDecoration: "none",
+                    fontWeight: 800,
+                    fontSize: "0.82rem",
+                    background: active ? "#681F00" : "rgba(104,31,0,0.08)",
+                    color: active ? "#fff" : "#681F00",
+                  }}
                 >
                   آخر {days} يوم
                 </a>
