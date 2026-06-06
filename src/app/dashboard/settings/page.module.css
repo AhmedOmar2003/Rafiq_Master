@@ -27,6 +27,7 @@
   display: flex;
   align-items: flex-start;
   gap: 0.9rem;
+  min-width: 0;
 }
 
 .formStack {
@@ -57,7 +58,7 @@
 }
 
 .input {
-  min-height: 46px;
+  min-height: 48px;
   border-radius: var(--radius-md);
   border: 1.5px solid rgba(0, 0, 0, 0.08);
   background: var(--color-background);
@@ -77,7 +78,7 @@
 
 .saveBtn {
   width: fit-content;
-  min-height: 44px;
+  min-height: 48px;
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   background: var(--color-primary);
@@ -138,7 +139,7 @@
 .infoRow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 0.6rem 0.8rem;
   background: var(--color-background);
   border-radius: var(--radius-sm);
@@ -149,7 +150,6 @@
   font-size: 0.82rem;
   color: var(--color-gray);
   font-weight: 600;
-  white-space: nowrap;
 }
 
 .infoVal {
@@ -157,6 +157,7 @@
   font-weight: 700;
   color: var(--color-black);
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 /* ── DB Stats ── */
@@ -324,8 +325,8 @@
 
 /* Toggle */
 .toggle {
-  width: 40px;
-  height: 22px;
+  width: 46px;
+  height: 26px;
   background: var(--color-gray-lighter);
   border-radius: var(--radius-pill);
   position: relative;
@@ -342,7 +343,7 @@
 }
 
 .toggleInput:checked + .toggle .toggleThumb {
-  transform: translateX(-18px);
+  transform: translateX(-20px);
 }
 
 .toggleThumb {
@@ -357,7 +358,7 @@
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 
-.toggleOn .toggleThumb { transform: translateX(-18px); }
+.toggleOn .toggleThumb { transform: translateX(-20px); }
 
 .comingSoon {
   font-size: 0.8rem;
@@ -421,4 +422,29 @@
   .cardFull { grid-column: span 1; }
   .dbStats { flex-direction: column; }
   .fieldGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .card {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+  }
+
+  .cardHeader,
+  .profileSection,
+  .aboutBanner {
+    flex-direction: column;
+  }
+
+  .infoRow,
+  .notifRow,
+  .notifRowInteractive {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saveBtn {
+    width: 100%;
+    justify-content: center;
+  }
 }

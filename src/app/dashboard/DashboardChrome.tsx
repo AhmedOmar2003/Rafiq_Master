@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -54,6 +54,14 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1024px)");
+    const syncSidebar = () => setIsSidebarOpen(!media.matches);
+    syncSidebar();
+    media.addEventListener("change", syncSidebar);
+    return () => media.removeEventListener("change", syncSidebar);
+  }, []);
+
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -71,7 +79,12 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
       </a>
       {/* Mobile Overlay */}
       {isSidebarOpen && (
-        <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
+        <button
+          type="button"
+          className={styles.mobileOverlay}
+          onClick={() => setIsSidebarOpen(false)}
+          aria-label="إغلاق القائمة الجانبية"
+        />
       )}
 
       {/* ── Sidebar ── */}
@@ -161,7 +174,7 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
       </aside>
 
       {/* ── Main Content ── */}
-      <main className={styles.mainContent}>
+      <div className={styles.mainContent}>
         {/* Topbar */}
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
@@ -218,20 +231,25 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
         </header>
 
         {/* Page Content */}
-        <main id="main-content" className={styles.pageContainer}>
+        <main id="main-content" className={styles.pageContainer} tabIndex={-1}>
           {children}
         </main>
-      </main>
+      </div>
 
       {/* ── Logout Modal ── */}
       {showLogoutModal && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
+          <div
+            className={styles.modalContent}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-dialog-title"
+          >
             <div className={styles.modalHeader}>
               <div className={styles.modalIconWrap}>
                 <LogOut size={26} strokeWidth={2.5} />
               </div>
-              <h3 className={styles.modalTitle}>تسجيل الخروج</h3>
+              <h3 id="logout-dialog-title" className={styles.modalTitle}>تسجيل الخروج</h3>
             </div>
             <p className={styles.modalBody}>
               هل أنت متأكد أنك تريد تسجيل الخروج من لوحة تحكم رفيق؟

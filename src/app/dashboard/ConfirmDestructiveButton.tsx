@@ -4,6 +4,7 @@ import {
   type CSSProperties,
   type ReactNode,
   useEffect,
+  useId,
   useRef,
   useState,
   useTransition,
@@ -45,6 +46,8 @@ export default function ConfirmDestructiveButton({
   const [submitting, setSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const titleId = useId();
+  const bodyId = useId();
 
   const isBusy = disabled || submitting || isPending;
 
@@ -108,18 +111,19 @@ export default function ConfirmDestructiveButton({
                 className={styles.card}
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="confirm-delete-title"
+                aria-labelledby={titleId}
+                aria-describedby={bodyId}
               >
                 <div className={styles.header}>
                   <div className={styles.iconWrap}>
                     <AlertTriangle size={26} strokeWidth={2.4} />
                   </div>
-                  <h3 id="confirm-delete-title" className={styles.title}>
+                  <h3 id={titleId} className={styles.title}>
                     {title}
                   </h3>
                 </div>
 
-                <p className={styles.body}>{message}</p>
+                <p id={bodyId} className={styles.body}>{message}</p>
 
                 <div className={styles.actions}>
                   <button

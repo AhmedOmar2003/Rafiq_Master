@@ -7,6 +7,7 @@
 .tableWrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 /* ── Page Shell ─────────────────────────────────────── */
@@ -39,7 +40,7 @@
   font-size: 0.75rem;
   color: var(--color-gray);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 .pageBreadcrumb span { color: var(--color-primary); }
@@ -70,7 +71,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  min-height: 44px;
+  min-height: 48px;
   padding: 0.8rem 1.4rem;
   background: linear-gradient(135deg, #681F00, #8E3006);
   color: #fff;
@@ -156,7 +157,7 @@
 .searchWrapper {
   position: relative;
   flex: 1;
-  min-width: 200px;
+  min-width: min(100%, 220px);
 }
 
 .searchIcon {
@@ -401,7 +402,8 @@
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 20px rgba(0,0,0,0.03);
   border: 1px solid rgba(0,0,0,0.04);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   transition: box-shadow 0.3s ease;
 }
 
@@ -411,6 +413,7 @@
 
 .table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
 }
 
@@ -427,8 +430,7 @@
   color: var(--color-gray);
   font-weight: 700;
   font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
@@ -528,11 +530,12 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .actionBtn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -689,12 +692,25 @@ button:focus-visible,
 @media (max-width: 768px) {
   .pageTitle { font-size: 1.25rem; }
   .pageHeader { flex-direction: column; }
-  .filterBar { padding: 0.75rem 1rem; }
+  .pageHeaderRight { width: 100%; flex-wrap: wrap; }
+  .primaryBtn { width: 100%; justify-content: center; }
+  .filterBar { padding: 0.75rem 1rem; align-items: stretch; }
   .searchWrapper { min-width: 100%; }
   .statsRow { grid-template-columns: 1fr 1fr; }
+  .dropdownWrapper,
+  .dropdownTrigger,
+  .filterActions,
+  .clearAllBtn { width: 100%; }
+  .filterActions {
+    margin-right: 0;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .resultsCount { text-align: center; }
 }
 
 @media (max-width: 480px) {
   .statsRow { grid-template-columns: 1fr; }
   .table th, .table td { padding: 0.75rem 0.75rem; }
+  .emptyState { padding: 2.5rem 1rem; }
 }
