@@ -4,8 +4,10 @@ import { Plus, MapPin, Star, Trophy, Hourglass, CheckCircle2 } from "lucide-reac
 import s from "../shared.module.css";
 import PlacesFilters from "./PlacesFilters";
 import {
+  approvePlaceEditSubmission,
   approvePlaceEditRequest,
   deletePlace,
+  rejectPlaceEditSubmission,
   rejectPlaceEditRequest,
   setPlaceEditAllowed,
   setPlaceStatus,
@@ -57,6 +59,19 @@ type CampaignLiteRow = {
   status: string | null;
 };
 
+type EditSubmissionRow = {
+  id: string;
+  place_id: string;
+  status: "pending" | "approved" | "rejected" | "appealed" | "cancelled";
+  previous_data: Record<string, unknown>;
+  proposed_data: Record<string, unknown>;
+  provider_note: string | null;
+  rejection_reason: string | null;
+  submitted_at: string;
+  review_due_at: string;
+  reviewed_at: string | null;
+};
+
 export default async function PlacesPage() {
   const supabase = createAdminClient();
   const role = await currentAdminRole();
@@ -70,7 +85,15 @@ export default async function PlacesPage() {
   // bad column rename), the page should still render the core places table.
   // We log the per-source error so it surfaces in Vercel logs instead of
   // showing the user a black 500 page.
-  const [placesResult, totalResult, providersResult, dirResult, analyticsResult, campaignsResult] =
+  const [
+    placesResult,
+    totalResult,
+    providersResult,
+    dirResult,
+    analyticsResult,
+    campaignsResult,
+    editSubmissionsResult,
+  ] =
     await Promise.allSettled([
       supabase
         .from("places")
@@ -93,6 +116,13 @@ export default async function PlacesPage() {
       supabase
         .from("promotional_campaigns")
         .select("place_id,status"),
+      supabase
+        .from("place_edit_submissions")
+        .select(
+          "id,place_id,status,previous_data,proposed_data,provider_note,rejection_reason,submitted_at,review_due_at,reviewed_at",
+        )
+        .order("submitted_at", { ascending: false })
+        .limit(500),
     ]);
 
   function unwrap<T>(
@@ -113,6 +143,10 @@ export default async function PlacesPage() {
   const providersData = unwrap<ProviderInfoRow[]>("providers", providersResult);
   const analyticsData = unwrap<AnalyticsEventRow[]>("analytics", analyticsResult);
   const campaignsData = unwrap<CampaignLiteRow[]>("campaigns", campaignsResult);
+  const editSubmissionsData = unwrap<EditSubmissionRow[]>(
+    "place edit submissions",
+    editSubmissionsResult,
+  );
 
   // count comes from a head-only query, the shape is slightly different.
   let total = 0;
@@ -193,6 +227,13 @@ export default async function PlacesPage() {
     campaignsByPlace.set(row.place_id, current);
   }
 
+  const latestEditSubmissionByPlace = new Map<string, EditSubmissionRow>();
+  for (const row of (editSubmissionsData ?? []) as EditSubmissionRow[]) {
+    if (!latestEditSubmissionByPlace.has(row.place_id)) {
+      latestEditSubmissionByPlace.set(row.place_id, row);
+    }
+  }
+
   const placeRows = rawRows.map((row) => {
     const provider = row.provider_id ? providerById.get(row.provider_id) : undefined;
     const owner = provider?.owner_id ? ownerById.get(provider.owner_id) : undefined;
@@ -207,6 +248,7 @@ export default async function PlacesPage() {
       analytics_interactions: analyticsByPlace.get(row.id)?.interactions ?? 0,
       campaign_count: campaignsByPlace.get(row.id)?.total ?? 0,
       pending_campaign_count: campaignsByPlace.get(row.id)?.pending ?? 0,
+      edit_submission: latestEditSubmissionByPlace.get(row.id) ?? null,
     };
   });
   const pendingCount = placeRows.filter((p) => (p.status ?? "pending") === "pending").length;
@@ -297,6 +339,8 @@ export default async function PlacesPage() {
         setEditAllowedAction={setPlaceEditAllowed}
         approveEditRequestAction={approvePlaceEditRequest}
         rejectEditRequestAction={rejectPlaceEditRequest}
+        approveEditSubmissionAction={approvePlaceEditSubmission}
+        rejectEditSubmissionAction={rejectPlaceEditSubmission}
         canDelete={role === "super_admin"}
       />
     </div>

@@ -27,6 +27,10 @@ export type AppealRow = {
   reviewerNote: string | null;
   reviewedAt: string | null;
   createdAt: string;
+  appealType: "place_rejection" | "place_edit_rejection";
+  editSubmissionId: string | null;
+  previousData: Record<string, unknown> | null;
+  proposedData: Record<string, unknown> | null;
 };
 
 const STATUS_OPTIONS = [
@@ -238,6 +242,23 @@ function AppealCard({
             >
               {appeal.contactName}
             </span>
+            <span
+              className={s.badge}
+              style={{
+                background:
+                  appeal.appealType === "place_edit_rejection"
+                    ? "rgba(37,99,235,0.10)"
+                    : "rgba(217,119,6,0.10)",
+                color:
+                  appeal.appealType === "place_edit_rejection"
+                    ? "#1d4ed8"
+                    : "#92400e",
+              }}
+            >
+              {appeal.appealType === "place_edit_rejection"
+                ? "طعن على رفض تعديل"
+                : "طعن على رفض مكان"}
+            </span>
             <StatusBadge status={appeal.status} />
           </div>
           <div
@@ -306,6 +327,67 @@ function AppealCard({
               </p>
             </div>
           )}
+
+          {appeal.appealType === "place_edit_rejection" &&
+            appeal.previousData &&
+            appeal.proposedData && (
+              <div>
+                <div
+                  style={{
+                    fontSize: "0.82rem",
+                    fontWeight: 800,
+                    marginBottom: "0.65rem",
+                  }}
+                >
+                  التغييرات محل الطعن
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fit, minmax(230px, 1fr))",
+                    gap: "0.65rem",
+                  }}
+                >
+                  {APPEAL_EDIT_FIELDS.map((field) => {
+                    const oldValue = appealValue(
+                      appeal.previousData?.[field.key],
+                    );
+                    const newValue = appealValue(
+                      appeal.proposedData?.[field.key],
+                    );
+                    if (oldValue === newValue) return null;
+                    return (
+                      <div
+                        key={field.key}
+                        style={{
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "10px",
+                          padding: "0.75rem",
+                        }}
+                      >
+                        <strong style={{ fontSize: "0.8rem" }}>
+                          {field.label}
+                        </strong>
+                        <div
+                          style={{
+                            marginTop: 5,
+                            color: "var(--color-gray)",
+                            fontSize: "0.78rem",
+                            textDecoration: "line-through",
+                          }}
+                        >
+                          {oldValue}
+                        </div>
+                        <div style={{ marginTop: 5, fontSize: "0.86rem" }}>
+                          {newValue}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
           {/* The appeal message */}
           <div>
@@ -430,6 +512,22 @@ function AppealCard({
       )}
     </div>
   );
+}
+
+const APPEAL_EDIT_FIELDS = [
+  { key: "place_name", label: "اسم المكان" },
+  { key: "activity_name", label: "النشاط" },
+  { key: "budget", label: "الميزانية" },
+  { key: "price_range", label: "السعر" },
+  { key: "place_address", label: "العنوان" },
+  { key: "city_name", label: "المدينة" },
+  { key: "description", label: "الوصف" },
+  { key: "image_path", label: "الصورة" },
+] as const;
+
+function appealValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  return String(value);
 }
 
 function InfoChip({

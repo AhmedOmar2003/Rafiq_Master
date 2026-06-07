@@ -417,3 +417,100 @@ export async function rejectPlaceEditRequest(
   revalidatePath("/dashboard/places");
   revalidatePath("/dashboard/activity");
 }
+
+export async function approvePlaceEditSubmission(
+  submissionId: string,
+): Promise<void> {
+  await requirePlaceAdmin();
+  const supabase = createAdminClient();
+
+  const { data: submission, error: fetchError } = await supabase
+    .from("place_edit_submissions")
+    .select("id,place_id,provider_id,previous_data,proposed_data,status")
+    .eq("id", submissionId)
+    .single();
+  if (fetchError) {
+    throw new Error(`تعذر جلب التعديل المقترح: ${fetchError.message}`);
+  }
+
+  const { error } = await supabase.rpc(
+    "admin_review_place_edit_submission" as never,
+    {
+      _submission_id: submissionId,
+      _decision: "approved",
+      _reason: null,
+    } as never,
+  );
+  if (error) {
+    throw new Error(`فشل اعتماد التعديل: ${error.message}`);
+  }
+
+  await logAdminAction({
+    action: "approve_place_edit_submission",
+    entityType: "place_edit_submission",
+    entityId: submissionId,
+    payload: {
+      place_id: (submission as { place_id?: string }).place_id ?? null,
+      provider_id: (submission as { provider_id?: string }).provider_id ?? null,
+      previous_data:
+        (submission as { previous_data?: Record<string, unknown> }).previous_data ?? null,
+      proposed_data:
+        (submission as { proposed_data?: Record<string, unknown> }).proposed_data ?? null,
+      source: "dashboard",
+    },
+  });
+  revalidatePath("/dashboard/places");
+  revalidatePath("/dashboard/activity");
+}
+
+export async function rejectPlaceEditSubmission(
+  submissionId: string,
+  reason: string,
+): Promise<void> {
+  await requirePlaceAdmin();
+  const cleanReason = reason.trim();
+  if (!cleanReason) {
+    throw new Error("اكتب سبب رفض التعديل.");
+  }
+
+  const supabase = createAdminClient();
+  const { data: submission, error: fetchError } = await supabase
+    .from("place_edit_submissions")
+    .select("id,place_id,provider_id,previous_data,proposed_data,status")
+    .eq("id", submissionId)
+    .single();
+  if (fetchError) {
+    throw new Error(`تعذر جلب التعديل المقترح: ${fetchError.message}`);
+  }
+
+  const { error } = await supabase.rpc(
+    "admin_review_place_edit_submission" as never,
+    {
+      _submission_id: submissionId,
+      _decision: "rejected",
+      _reason: cleanReason,
+    } as never,
+  );
+  if (error) {
+    throw new Error(`فشل رفض التعديل: ${error.message}`);
+  }
+
+  await logAdminAction({
+    action: "reject_place_edit_submission",
+    entityType: "place_edit_submission",
+    entityId: submissionId,
+    payload: {
+      place_id: (submission as { place_id?: string }).place_id ?? null,
+      provider_id: (submission as { provider_id?: string }).provider_id ?? null,
+      reason: cleanReason,
+      previous_data:
+        (submission as { previous_data?: Record<string, unknown> }).previous_data ?? null,
+      proposed_data:
+        (submission as { proposed_data?: Record<string, unknown> }).proposed_data ?? null,
+      source: "dashboard",
+    },
+  });
+  revalidatePath("/dashboard/places");
+  revalidatePath("/dashboard/appeals");
+  revalidatePath("/dashboard/activity");
+}

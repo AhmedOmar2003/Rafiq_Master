@@ -21,6 +21,8 @@ type RawAppeal = {
   reviewer_note: string | null;
   reviewed_at: string | null;
   created_at: string;
+  appeal_type: "place_rejection" | "place_edit_rejection";
+  edit_submission_id: string | null;
 };
 
 type PlaceLite = {
@@ -36,19 +38,31 @@ type ProviderLite = {
   contact_email: string | null;
 };
 
+type EditSubmissionLite = {
+  id: string;
+  rejection_reason: string | null;
+  previous_data: Record<string, unknown>;
+  proposed_data: Record<string, unknown>;
+};
+
 export default async function AppealsPage() {
   const supabase = createAdminClient();
 
-  const [appealsRes, placesRes, providersRes] = await Promise.allSettled([
+  const [appealsRes, placesRes, providersRes, editSubmissionsRes] =
+    await Promise.allSettled([
     supabase
       .from("place_appeals")
       .select(
         "id,place_id,provider_id,contact_name,contact_phone,contact_email," +
-          "message,status,reviewer_note,reviewed_at,created_at",
+          "message,status,reviewer_note,reviewed_at,created_at," +
+          "appeal_type,edit_submission_id",
       )
       .order("created_at", { ascending: false }),
     supabase.from("places").select("place_id,place_name,rejection_reason,status"),
     supabase.from("providers").select("id,business_name,contact_email"),
+    supabase
+      .from("place_edit_submissions")
+      .select("id,rejection_reason,previous_data,proposed_data"),
   ]);
 
   const rawAppeals =
@@ -57,6 +71,10 @@ export default async function AppealsPage() {
     placesRes.status === "fulfilled" ? (placesRes.value.data ?? []) : [];
   const rawProviders =
     providersRes.status === "fulfilled" ? (providersRes.value.data ?? []) : [];
+  const rawEditSubmissions =
+    editSubmissionsRes.status === "fulfilled"
+      ? (editSubmissionsRes.value.data ?? [])
+      : [];
 
   if (appealsRes.status === "fulfilled" && appealsRes.value.error) {
     console.error("[AppealsPage] appeals error:", appealsRes.value.error);
@@ -70,16 +88,26 @@ export default async function AppealsPage() {
   for (const p of rawProviders as ProviderLite[]) {
     providerMap.set(p.id, p);
   }
+  const editSubmissionMap = new Map<string, EditSubmissionLite>();
+  for (const submission of rawEditSubmissions as EditSubmissionLite[]) {
+    editSubmissionMap.set(submission.id, submission);
+  }
 
   const appeals: AppealRow[] = (rawAppeals as RawAppeal[]).map((a) => {
     const place = placeMap.get(a.place_id);
     const provider = a.provider_id ? providerMap.get(a.provider_id) : undefined;
+    const editSubmission = a.edit_submission_id
+      ? editSubmissionMap.get(a.edit_submission_id)
+      : undefined;
     return {
       id: a.id,
       placeId: a.place_id,
       placeName: place?.place_name ?? `#${a.place_id}`,
       placeStatus: place?.status ?? null,
-      placeRejectionReason: place?.rejection_reason ?? null,
+      placeRejectionReason:
+        a.appeal_type === "place_edit_rejection"
+          ? editSubmission?.rejection_reason ?? null
+          : place?.rejection_reason ?? null,
       providerBusiness: provider?.business_name ?? null,
       providerEmail: provider?.contact_email ?? null,
       contactName: a.contact_name,
@@ -90,6 +118,10 @@ export default async function AppealsPage() {
       reviewerNote: a.reviewer_note,
       reviewedAt: a.reviewed_at,
       createdAt: a.created_at,
+      appealType: a.appeal_type,
+      editSubmissionId: a.edit_submission_id,
+      previousData: editSubmission?.previous_data ?? null,
+      proposedData: editSubmission?.proposed_data ?? null,
     };
   });
 
@@ -108,10 +140,10 @@ export default async function AppealsPage() {
           <div className={s.pageBreadcrumb}>
             لوحة التحكم <span>/</span> الطعون
           </div>
-          <h1 className={s.pageTitle}>الطعون على قرارات الرفض</h1>
+          <h1 className={s.pageTitle}>الطعون وطلبات إعادة النظر</h1>
           <p className={s.pageSubtitle}>
-            مقدمو الخدمات بيقدّموا اعتراضات على رفض أماكنهم من هنا — راجع كل
-            طعن، تواصل معهم، وغيّر الحالة بعد القرار.
+            راجع طعون رفض الأماكن أو التعديلات، شوف بيانات التواصل والتغييرات،
+            وخد القرار المناسب بدون ما توقف المكان المنشور.
           </p>
         </div>
       </div>

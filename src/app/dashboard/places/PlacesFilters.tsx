@@ -2,11 +2,24 @@
 
 import { useState, useMemo, useRef, useEffect, useTransition } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Edit3, Trash2, Search, X, ChevronDown, Star, MapPin, Utensils, PartyPopper, Building2, Activity, Dices, Wallet, CheckCircle2, XCircle, Hourglass, Store, Mail, ShieldCheck, Filter } from "lucide-react";
 import s from "../shared.module.css";
 import ConfirmDestructiveButton from "../ConfirmDestructiveButton";
 
 type PlaceStatus = "pending" | "under_review" | "approved" | "rejected" | "suspended";
+
+type PlaceEditSubmission = {
+  id: string;
+  status: "pending" | "approved" | "rejected" | "appealed" | "cancelled";
+  previous_data: Record<string, unknown>;
+  proposed_data: Record<string, unknown>;
+  provider_note: string | null;
+  rejection_reason: string | null;
+  submitted_at: string;
+  review_due_at: string;
+  reviewed_at: string | null;
+};
 
 type PlaceRow = {
   id?: string;
@@ -43,6 +56,7 @@ type PlaceRow = {
   analytics_interactions?: number;
   campaign_count?: number;
   pending_campaign_count?: number;
+  edit_submission?: PlaceEditSubmission | null;
 };
 
 const SOURCE_OPTIONS = [
@@ -94,6 +108,8 @@ export default function PlacesFilters({
   setEditAllowedAction,
   approveEditRequestAction,
   rejectEditRequestAction,
+  approveEditSubmissionAction,
+  rejectEditSubmissionAction,
   canDelete,
 }: {
   places: PlaceRow[];
@@ -108,6 +124,11 @@ export default function PlacesFilters({
   setEditAllowedAction?: (id: number, allowed: boolean) => Promise<void>;
   approveEditRequestAction?: (id: number, response?: string) => Promise<void>;
   rejectEditRequestAction?: (id: number, reason: string) => Promise<void>;
+  approveEditSubmissionAction?: (submissionId: string) => Promise<void>;
+  rejectEditSubmissionAction?: (
+    submissionId: string,
+    reason: string,
+  ) => Promise<void>;
   canDelete?: boolean;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -133,6 +154,10 @@ export default function PlacesFilters({
   const [editRequestRejectTarget, setEditRequestRejectTarget] =
     useState<PlaceRow | null>(null);
   const [editRequestRejectReason, setEditRequestRejectReason] = useState("");
+  const [comparisonTarget, setComparisonTarget] = useState<PlaceRow | null>(
+    null,
+  );
+  const [submissionRejectReason, setSubmissionRejectReason] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const searchRef = useRef<HTMLDivElement>(null);
@@ -498,16 +523,31 @@ export default function PlacesFilters({
                           </span>
                         )}
                         {place.edit_request_status === "submitted" && (
-                          <span
-                            className={s.badge}
-                            style={{
-                              background: "rgba(217,119,6,0.10)",
-                              color: "#92400e",
-                            }}
-                          >
-                            <Hourglass size={12} />
-                            تعديل تحت المراجعة
-                          </span>
+                          <>
+                            <span
+                              className={s.badge}
+                              style={{
+                                background: "rgba(217,119,6,0.10)",
+                                color: "#92400e",
+                              }}
+                            >
+                              <Hourglass size={12} />
+                              تعديل تحت المراجعة خلال 6 ساعات
+                            </span>
+                            {place.edit_submission && (
+                              <button
+                                type="button"
+                                className={s.secondaryBtn}
+                                style={{ padding: "0.4rem 0.65rem" }}
+                                onClick={() => {
+                                  setComparisonTarget(place);
+                                  setSubmissionRejectReason("");
+                                }}
+                              >
+                                عرض القديم والجديد
+                              </button>
+                            )}
+                          </>
                         )}
                         {place.status === "rejected" && setEditAllowedAction && (
                           <EditAllowedToggle
@@ -905,8 +945,333 @@ export default function PlacesFilters({
           </div>
         </div>
       )}
+
+      {comparisonTarget?.edit_submission && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="place-edit-comparison-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.52)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+            padding: "1rem",
+          }}
+          onClick={(event) =>
+            event.target === event.currentTarget && setComparisonTarget(null)
+          }
+        >
+          <div
+            style={{
+              background: "var(--color-card, #fff)",
+              borderRadius: "var(--radius-xl, 16px)",
+              width: "min(920px, 100%)",
+              maxHeight: "min(88vh, 820px)",
+              overflowY: "auto",
+              padding: "1.5rem",
+              boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "1rem",
+                alignItems: "start",
+                marginBottom: "1rem",
+              }}
+            >
+              <div>
+                <h3
+                  id="place-edit-comparison-title"
+                  style={{ margin: 0, fontSize: "1.15rem", fontWeight: 900 }}
+                >
+                  مقارنة تعديل {comparisonTarget.place_name}
+                </h3>
+                <p
+                  style={{
+                    margin: "0.4rem 0 0",
+                    color: "var(--color-gray)",
+                  }}
+                >
+                  المكان ما زال ظاهرًا بالنسخة القديمة. الموافقة وحدها تنشر
+                  التعديل الجديد.
+                </p>
+              </div>
+              <button
+                type="button"
+                className={s.actionBtn}
+                onClick={() => setComparisonTarget(null)}
+                aria-label="إغلاق المقارنة"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: "0.75rem",
+              }}
+            >
+              {EDIT_COMPARISON_FIELDS.map((field) => {
+                const submission = comparisonTarget.edit_submission!;
+                const oldValue = displayEditValue(
+                  submission.previous_data[field.key],
+                );
+                const newValue = displayEditValue(
+                  submission.proposed_data[field.key],
+                );
+                const changed = oldValue !== newValue;
+                return (
+                  <div
+                    key={field.key}
+                    style={{
+                      border: `1px solid ${
+                        changed ? "rgba(217,119,6,0.42)" : "var(--color-border)"
+                      }`,
+                      borderRadius: "12px",
+                      padding: "0.9rem",
+                      background: changed
+                        ? "rgba(217,119,6,0.05)"
+                        : "var(--color-surface, #fafafa)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        marginBottom: "0.65rem",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <span>{field.label}</span>
+                      {changed && (
+                        <span style={{ color: "#92400e", fontSize: "0.75rem" }}>
+                          اتغيّر
+                        </span>
+                      )}
+                    </div>
+                    <ComparisonValue
+                      label="الحالي"
+                      value={oldValue}
+                      isImage={field.key === "image_path"}
+                    />
+                    <ComparisonValue
+                      label="المقترح"
+                      value={newValue}
+                      isImage={field.key === "image_path"}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {comparisonTarget.edit_submission.provider_note && (
+              <p
+                style={{
+                  margin: "1rem 0 0",
+                  padding: "0.75rem",
+                  borderRadius: "10px",
+                  background: "var(--color-surface, #fafafa)",
+                }}
+              >
+                <strong>ملاحظة مقدم الخدمة:</strong>{" "}
+                {comparisonTarget.edit_submission.provider_note}
+              </p>
+            )}
+
+            <label
+              htmlFor="submission-rejection-reason"
+              style={{
+                display: "block",
+                marginTop: "1rem",
+                fontWeight: 800,
+              }}
+            >
+              سبب الرفض، عند الحاجة
+            </label>
+            <textarea
+              id="submission-rejection-reason"
+              rows={3}
+              value={submissionRejectReason}
+              onChange={(event) =>
+                setSubmissionRejectReason(event.target.value)
+              }
+              placeholder="اكتب سببًا واضحًا يظهر لمقدم الخدمة ويمكنه الطعن عليه."
+              style={{
+                width: "100%",
+                marginTop: "0.5rem",
+                resize: "vertical",
+                padding: "0.75rem 1rem",
+                border: "1.5px solid var(--color-border, #e5e7eb)",
+                borderRadius: "10px",
+                font: "inherit",
+                boxSizing: "border-box",
+              }}
+            />
+
+            <div
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                flexWrap: "wrap",
+                marginTop: "1rem",
+              }}
+            >
+              <button
+                type="button"
+                className={s.primaryBtn}
+                disabled={isPending || !approveEditSubmissionAction}
+                onClick={() => {
+                  const submissionId =
+                    comparisonTarget.edit_submission?.id;
+                  if (!submissionId || !approveEditSubmissionAction) return;
+                  startTransition(async () => {
+                    await approveEditSubmissionAction(submissionId);
+                    setComparisonTarget(null);
+                  });
+                }}
+              >
+                <CheckCircle2 size={17} />
+                {isPending ? "جارٍ الحفظ..." : "قبول ونشر التعديل"}
+              </button>
+              <button
+                type="button"
+                className={s.dangerBtn}
+                disabled={
+                  isPending ||
+                  !rejectEditSubmissionAction ||
+                  !submissionRejectReason.trim()
+                }
+                onClick={() => {
+                  const submissionId =
+                    comparisonTarget.edit_submission?.id;
+                  const reason = submissionRejectReason.trim();
+                  if (
+                    !submissionId ||
+                    !reason ||
+                    !rejectEditSubmissionAction
+                  ) {
+                    return;
+                  }
+                  startTransition(async () => {
+                    await rejectEditSubmissionAction(submissionId, reason);
+                    setComparisonTarget(null);
+                    setSubmissionRejectReason("");
+                  });
+                }}
+              >
+                <XCircle size={17} />
+                رفض التعديل
+              </button>
+              <button
+                type="button"
+                className={s.secondaryBtn}
+                onClick={() => setComparisonTarget(null)}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
+}
+
+const EDIT_COMPARISON_FIELDS = [
+  { key: "place_name", label: "اسم المكان" },
+  { key: "activity_name", label: "نوع النشاط" },
+  { key: "budget", label: "الميزانية" },
+  { key: "price_range", label: "نطاق السعر" },
+  { key: "place_address", label: "العنوان" },
+  { key: "city_name", label: "المدينة" },
+  { key: "description", label: "الوصف" },
+  { key: "image_path", label: "صورة الغلاف" },
+] as const;
+
+function displayEditValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  return String(value);
+}
+
+function ComparisonValue({
+  label,
+  value,
+  isImage = false,
+}: {
+  label: string;
+  value: string;
+  isImage?: boolean;
+}) {
+  const imageUrl = isImage ? resolvePlaceImageUrl(value) : null;
+  return (
+    <div style={{ marginTop: "0.45rem" }}>
+      <div
+        style={{
+          color: "var(--color-gray)",
+          fontSize: "0.75rem",
+          fontWeight: 700,
+        }}
+      >
+        {label}
+      </div>
+      {imageUrl ? (
+        // Admin comparison needs the exact before/after asset, not optimized
+        // catalogue rendering. A plain img also supports public Storage URLs.
+        <Image
+          src={imageUrl}
+          alt={`${label} لصورة المكان`}
+          width={640}
+          height={360}
+          unoptimized
+          style={{
+            width: "100%",
+            aspectRatio: "16 / 9",
+            objectFit: "contain",
+            marginTop: "0.35rem",
+            borderRadius: "8px",
+            background: "#f3f4f6",
+          }}
+        />
+      ) : (
+        <div
+          dir={
+            value.startsWith("http") || value.includes("://") ? "ltr" : "rtl"
+          }
+          style={{
+            marginTop: "0.2rem",
+            lineHeight: 1.55,
+            overflowWrap: "anywhere",
+            textAlign: "start",
+          }}
+        >
+          {value}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function resolvePlaceImageUrl(value: string): string | null {
+  if (value === "—") return null;
+  if (/^https?:\/\//.test(value)) return value;
+  const prefix = "place-images://";
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+  if (!supabaseUrl || !value.startsWith(prefix)) return null;
+  const path = value
+    .slice(prefix.length)
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
+  return `${supabaseUrl}/storage/v1/object/public/place-images/${path}`;
 }
 
 // ---------------------------------------------------------------------------

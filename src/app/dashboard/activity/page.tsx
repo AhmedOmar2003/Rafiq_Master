@@ -534,6 +534,18 @@ export default async function ActivityPage({
         subtitle: actor,
         detail: stringPayloadValue(payload, "reason") ?? undefined,
       },
+      approve_place_edit_submission: {
+        kind: "approve",
+        title: `تم اعتماد ونشر تعديل مكان`,
+        subtitle: actor,
+        detail: `تم استبدال النسخة المنشورة بالنسخة المقترحة بعد المقارنة`,
+      },
+      reject_place_edit_submission: {
+        kind: "reject",
+        title: `تم رفض تعديل مقترح لمكان`,
+        subtitle: actor,
+        detail: stringPayloadValue(payload, "reason") ?? undefined,
+      },
       create_user: {
         kind: "admin_action",
         title: `الأدمن أنشأ حسابًا جديدًا`,
