@@ -111,6 +111,12 @@ type PlaceEventRow = {
   place_name: string | null;
   status: string | null;
   created_at: string;
+  updated_at: string;
+  edit_request_status: string | null;
+  edit_request_response: string | null;
+  edit_request_requested_at: string | null;
+  edit_request_reviewed_at: string | null;
+  edit_submitted_at: string | null;
 };
 
 function parseRange(value: string | string[] | undefined): number {
@@ -194,9 +200,9 @@ export default async function ActivityPage({
       .limit(100),
     supabase
       .from("places")
-      .select("id,provider_id,place_id,place_name,status,created_at")
-      .gte("created_at", sinceIso)
-      .order("created_at", { ascending: false })
+      .select("id,provider_id,place_id,place_name,status,created_at,updated_at,edit_request_status,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_submitted_at")
+      .gte("updated_at", sinceIso)
+      .order("updated_at", { ascending: false })
       .limit(150),
     supabase
       .from("moderation_reports")
@@ -279,13 +285,39 @@ export default async function ActivityPage({
     const isProviderSubmission = !!place.provider_id;
     if (!isProviderSubmission) continue;
     const providerName = providerByUuid.get(place.provider_id!) ?? "مقدم خدمة";
-    events.push({
-      id: `place-created:${place.id}`,
-      kind: "pending",
-      title: `مكان جديد قيد المراجعة: ${place.place_name ?? "مكان"}`,
-      subtitle: `${providerName} • ${place.status ?? "pending"}`,
-      createdAt: place.created_at,
-    });
+    if (place.created_at >= sinceIso) {
+      events.push({
+        id: `place-created:${place.id}`,
+        kind: "pending",
+        title: `مكان جديد قيد المراجعة: ${place.place_name ?? "مكان"}`,
+        subtitle: `${providerName} • ${place.status ?? "pending"}`,
+        createdAt: place.created_at,
+      });
+    }
+    if (
+      place.edit_request_status === "pending" &&
+      place.edit_request_requested_at
+    ) {
+      events.push({
+        id: `place-edit-request:${place.id}`,
+        kind: "pending",
+        title: `طلب تعديل مكان: ${place.place_name ?? "مكان"}`,
+        subtitle: providerName,
+        createdAt: place.edit_request_requested_at,
+      });
+    }
+    if (
+      place.edit_request_status === "submitted" &&
+      place.edit_submitted_at
+    ) {
+      events.push({
+        id: `place-edit-submitted:${place.id}`,
+        kind: "pending",
+        title: `نسخة معدّلة تنتظر المراجعة: ${place.place_name ?? "مكان"}`,
+        subtitle: `${providerName} • مهلة المراجعة 6 ساعات`,
+        createdAt: place.edit_submitted_at,
+      });
+    }
   }
 
   // ── moderation_history events (approve/reject/suspend/start_review) ──
@@ -489,6 +521,18 @@ export default async function ActivityPage({
         detail: (payload.allow_edit === true || payload.allow_edit === "true")
           ? "فتح التعديل للمزوّد"
           : "أغلق التعديل للمزوّد",
+      },
+      approve_place_edit_request: {
+        kind: "approve",
+        title: `تم قبول طلب تعديل مكان: ${entityPlaceName ?? "مكان"}`,
+        subtitle: actor,
+        detail: stringPayloadValue(payload, "response") ?? undefined,
+      },
+      reject_place_edit_request: {
+        kind: "reject",
+        title: `تم رفض طلب تعديل مكان: ${entityPlaceName ?? "مكان"}`,
+        subtitle: actor,
+        detail: stringPayloadValue(payload, "reason") ?? undefined,
       },
       create_user: {
         kind: "admin_action",

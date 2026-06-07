@@ -25,6 +25,7 @@ import {
   Heart,
   Navigation,
   Siren,
+  Edit3,
 } from "lucide-react";
 import { format } from "date-fns";
 import GrowthChart from "./GrowthChart";
@@ -94,6 +95,7 @@ export default async function DashboardOverview({
     { count: activeCampaignsCount },
     { count: pendingCampaignsCount },
     { count: pendingCampaignEditRequestsCount },
+    { count: pendingPlaceEditRequestsCount },
     { count: openReportsCount },
     { count: placeOpenCount },
     { count: favoriteAddsCount },
@@ -146,6 +148,10 @@ export default async function DashboardOverview({
       .eq("status", "pending_review"),
     supabase
       .from("promotional_campaigns")
+      .select("*", { count: "exact", head: true })
+      .eq("edit_request_status", "pending"),
+    supabase
+      .from("places")
       .select("*", { count: "exact", head: true })
       .eq("edit_request_status", "pending"),
     supabase
@@ -398,6 +404,23 @@ export default async function DashboardOverview({
           <div className={styles.statTrend}>
             <Eye size={16} />
             <span>كلي</span>
+          </div>
+        </div>
+
+        <div className={`${styles.statCard} ${styles.statCardGold}`}>
+          <div className={styles.statCardBg} />
+          <div className={styles.statIconWrap}>
+            <Edit3 size={22} />
+          </div>
+          <div className={styles.statBody}>
+            <span className={styles.statValue}>
+              {pendingPlaceEditRequestsCount ?? 0}
+            </span>
+            <span className={styles.statLabel}>طلبات تعديل أماكن</span>
+          </div>
+          <div className={styles.statTrend}>
+            <Clock size={16} />
+            <span>تحتاج قرار</span>
           </div>
         </div>
 

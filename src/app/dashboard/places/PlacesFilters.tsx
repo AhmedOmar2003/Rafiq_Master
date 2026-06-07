@@ -31,6 +31,12 @@ type PlaceRow = {
   /** True when the admin opened the "edit & resubmit" door on a rejected
    * place. Only meaningful while status === 'rejected'. */
   edit_allowed?: boolean | null;
+  edit_request_status?: string | null;
+  edit_request_note?: string | null;
+  edit_request_response?: string | null;
+  edit_request_requested_at?: string | null;
+  edit_request_reviewed_at?: string | null;
+  edit_submitted_at?: string | null;
   analytics_views?: number;
   analytics_favorites?: number;
   analytics_map_clicks?: number;
@@ -86,6 +92,9 @@ export default function PlacesFilters({
   deleteAction,
   setStatusAction,
   setEditAllowedAction,
+  approveEditRequestAction,
+  rejectEditRequestAction,
+  canDelete,
 }: {
   places: PlaceRow[];
   deleteAction: (id: number) => Promise<void>;
@@ -97,6 +106,9 @@ export default function PlacesFilters({
   ) => Promise<void>;
   /** Flip the edit_allowed flag on a place that's already rejected. */
   setEditAllowedAction?: (id: number, allowed: boolean) => Promise<void>;
+  approveEditRequestAction?: (id: number, response?: string) => Promise<void>;
+  rejectEditRequestAction?: (id: number, reason: string) => Promise<void>;
+  canDelete?: boolean;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -118,6 +130,9 @@ export default function PlacesFilters({
    * Default false → admin must consciously open the door.
    */
   const [rejectAllowEdit, setRejectAllowEdit] = useState(false);
+  const [editRequestRejectTarget, setEditRequestRejectTarget] =
+    useState<PlaceRow | null>(null);
+  const [editRequestRejectReason, setEditRequestRejectReason] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const searchRef = useRef<HTMLDivElement>(null);
@@ -470,6 +485,30 @@ export default function PlacesFilters({
                     <td>
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         <StatusBadge status={place.status ?? "pending"} />
+                        {place.edit_request_status === "pending" && (
+                          <span
+                            className={s.badge}
+                            style={{
+                              background: "rgba(37,99,235,0.10)",
+                              color: "#1d4ed8",
+                            }}
+                          >
+                            <Edit3 size={12} />
+                            طلب تعديل جديد
+                          </span>
+                        )}
+                        {place.edit_request_status === "submitted" && (
+                          <span
+                            className={s.badge}
+                            style={{
+                              background: "rgba(217,119,6,0.10)",
+                              color: "#92400e",
+                            }}
+                          >
+                            <Hourglass size={12} />
+                            تعديل تحت المراجعة
+                          </span>
+                        )}
                         {place.status === "rejected" && setEditAllowedAction && (
                           <EditAllowedToggle
                             place={place}
@@ -496,6 +535,40 @@ export default function PlacesFilters({
                     </td>
                     <td>
                       <div className={s.actionGroup}>
+                        {place.edit_request_status === "pending" &&
+                          approveEditRequestAction && (
+                            <form
+                              action={approveEditRequestAction.bind(
+                                null,
+                                place.place_id,
+                                undefined,
+                              )}
+                            >
+                              <button
+                                type="submit"
+                                className={`${s.actionBtn} ${s.actionBtnApprove}`}
+                                title="قبول طلب التعديل"
+                                aria-label={`قبول طلب تعديل ${place.place_name}`}
+                              >
+                                <Edit3 size={16} />
+                              </button>
+                            </form>
+                          )}
+                        {place.edit_request_status === "pending" &&
+                          rejectEditRequestAction && (
+                            <button
+                              type="button"
+                              className={`${s.actionBtn} ${s.actionBtnReject}`}
+                              title="رفض طلب التعديل مع السبب"
+                              aria-label={`رفض طلب تعديل ${place.place_name}`}
+                              onClick={() => {
+                                setEditRequestRejectTarget(place);
+                                setEditRequestRejectReason("");
+                              }}
+                            >
+                              <XCircle size={16} />
+                            </button>
+                          )}
                         {setStatusAction && (place.status ?? "pending") !== "approved" && (
                           <form action={setStatusAction.bind(null, place.place_id, "approved", undefined, undefined)}>
                             <button
@@ -539,17 +612,19 @@ export default function PlacesFilters({
                         >
                           <Edit3 size={16} />
                         </Link>
-                        <ConfirmDestructiveButton
-                          title="حذف المكان"
-                          message={`سيتم حذف "${place.place_name}" نهائيًا من النظام. هذا الإجراء لا يمكن التراجع عنه.`}
-                          confirmLabel="تأكيد الحذف"
-                          pendingLabel="جارٍ الحذف..."
-                          formAction={deleteAction.bind(null, place.place_id)}
-                          triggerClassName={`${s.actionBtn} ${s.actionBtnDelete}`}
-                          triggerTitle="حذف"
-                        >
+                        {canDelete && (
+                          <ConfirmDestructiveButton
+                            title="حذف المكان"
+                            message={`سيتم حذف "${place.place_name}" نهائيًا من النظام. هذا الإجراء لا يمكن التراجع عنه.`}
+                            confirmLabel="تأكيد الحذف"
+                            pendingLabel="جارٍ الحذف..."
+                            formAction={deleteAction.bind(null, place.place_id)}
+                            triggerClassName={`${s.actionBtn} ${s.actionBtnDelete}`}
+                            triggerTitle="حذف"
+                          >
                             <Trash2 size={16} />
-                        </ConfirmDestructiveButton>
+                          </ConfirmDestructiveButton>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -718,6 +793,113 @@ export default function PlacesFilters({
                 }}
               >
                 {isPending ? "جارٍ الرفض…" : "تأكيد الرفض ❌"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editRequestRejectTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reject-edit-request-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "1rem",
+          }}
+          onClick={(event) =>
+            event.target === event.currentTarget &&
+            setEditRequestRejectTarget(null)
+          }
+        >
+          <div
+            style={{
+              background: "var(--color-card, #fff)",
+              borderRadius: "var(--radius-xl, 16px)",
+              padding: "1.5rem",
+              width: "min(460px, 100%)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+            }}
+          >
+            <div>
+              <h3
+                id="reject-edit-request-title"
+                style={{ margin: 0, fontWeight: 800, fontSize: "1.05rem" }}
+              >
+                رفض طلب تعديل المكان
+              </h3>
+              <p
+                style={{
+                  margin: "0.35rem 0 0",
+                  color: "var(--color-gray)",
+                  fontSize: "0.84rem",
+                }}
+              >
+                {editRequestRejectTarget.place_name} سيظل ظاهرًا ببياناته الحالية.
+              </p>
+            </div>
+            <label
+              htmlFor="edit-request-rejection"
+              style={{ fontWeight: 700, fontSize: "0.88rem" }}
+            >
+              وضّح السبب لمقدم الخدمة
+            </label>
+            <textarea
+              id="edit-request-rejection"
+              autoFocus
+              rows={4}
+              value={editRequestRejectReason}
+              onChange={(event) => setEditRequestRejectReason(event.target.value)}
+              placeholder="مثال: وضّح البيانات المطلوب تغييرها قبل إرسال طلب جديد."
+              style={{
+                width: "100%",
+                resize: "vertical",
+                padding: "0.75rem 1rem",
+                border: "1.5px solid var(--color-border, #e5e7eb)",
+                borderRadius: "var(--radius-md, 10px)",
+                font: "inherit",
+                boxSizing: "border-box",
+              }}
+            />
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className={s.secondaryBtn}
+                onClick={() => setEditRequestRejectTarget(null)}
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                className={s.dangerBtn}
+                disabled={!editRequestRejectReason.trim() || isPending}
+                onClick={() => {
+                  if (
+                    !rejectEditRequestAction ||
+                    !editRequestRejectReason.trim()
+                  ) {
+                    return;
+                  }
+                  const target = editRequestRejectTarget;
+                  const reason = editRequestRejectReason.trim();
+                  startTransition(async () => {
+                    await rejectEditRequestAction(target.place_id, reason);
+                    setEditRequestRejectTarget(null);
+                    setEditRequestRejectReason("");
+                  });
+                }}
+              >
+                {isPending ? "جارٍ الحفظ..." : "رفض الطلب"}
               </button>
             </div>
           </div>

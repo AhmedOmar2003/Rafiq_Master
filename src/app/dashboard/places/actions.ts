@@ -2,10 +2,20 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin/audit";
+import { currentAdminRole } from "@/lib/auth/role";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+async function requirePlaceAdmin(options?: { superAdmin?: boolean }) {
+  const role = await currentAdminRole();
+  if (!role) throw new Error("غير مصرح بتنفيذ الإجراء.");
+  if (options?.superAdmin && role !== "super_admin") {
+    throw new Error("الحذف النهائي متاح للمشرف الأعلى فقط.");
+  }
+}
+
 export async function createPlace(formData: FormData) {
+  await requirePlaceAdmin();
   const supabase = createAdminClient();
 
   const budget = (formData.get("budget") as string | null)?.trim() ?? "";
@@ -54,6 +64,7 @@ export async function createPlace(formData: FormData) {
 }
 
 export async function updatePlace(place_id: number, formData: FormData) {
+  await requirePlaceAdmin();
   const supabase = createAdminClient();
 
   const budget = (formData.get("budget") as string | null)?.trim() ?? "";
@@ -102,6 +113,7 @@ export async function updatePlace(place_id: number, formData: FormData) {
 }
 
 export async function deletePlace(place_id: number): Promise<void> {
+  await requirePlaceAdmin({ superAdmin: true });
   const supabase = createAdminClient();
   const { data: existingPlace } = await supabase
     .from("places")
@@ -152,6 +164,7 @@ export async function setPlaceStatus(
    */
   allowEdit?: boolean,
 ): Promise<void> {
+  await requirePlaceAdmin();
   const supabase = createAdminClient();
 
   // Migration 0030 relaxes the moderation trigger for service_role, so the
@@ -159,7 +172,9 @@ export async function setPlaceStatus(
   // moderation history trigger as usual.
   const { data: existingPlaceRaw, error: fetchError } = await supabase
     .from("places")
-    .select("id,place_id,place_name,approved_at,suspended_at,status")
+    .select(
+      "id,place_id,place_name,approved_at,suspended_at,status,edit_request_status",
+    )
     .eq("place_id", placeId)
     .single();
 
@@ -174,6 +189,7 @@ export async function setPlaceStatus(
     approved_at: string | null;
     suspended_at: string | null;
     status: string | null;
+    edit_request_status: string | null;
   };
 
   const { error } = await supabase
@@ -185,6 +201,27 @@ export async function setPlaceStatus(
       // For any other status we reset it to false so a future rejection
       // doesn't inherit a stale "true" from the past.
       edit_allowed: status === "rejected" ? (allowEdit ?? false) : false,
+      edit_request_status:
+        status === "approved"
+          ? "none"
+          : status === "rejected" &&
+              existingPlace.edit_request_status === "submitted"
+            ? "rejected"
+            : existingPlace.edit_request_status ?? "none",
+      edit_request_response:
+        status === "rejected" &&
+        existingPlace.edit_request_status === "submitted"
+          ? rejectionReason ?? null
+          : status === "approved"
+            ? null
+            : undefined,
+      edit_request_reviewed_at:
+        status === "rejected" &&
+        existingPlace.edit_request_status === "submitted"
+          ? new Date().toISOString()
+          : status === "approved"
+            ? null
+            : undefined,
       approved_at:
         status === "approved"
           ? new Date().toISOString()
@@ -227,6 +264,7 @@ export async function setPlaceEditAllowed(
   placeId: number,
   allowed: boolean,
 ): Promise<void> {
+  await requirePlaceAdmin();
   const supabase = createAdminClient();
   const { data: existingPlace } = await supabase
     .from("places")
@@ -257,4 +295,125 @@ export async function setPlaceEditAllowed(
     },
   });
   revalidatePath("/dashboard/places");
+}
+
+export async function approvePlaceEditRequest(
+  placeId: number,
+  response = "تمت الموافقة على طلب التعديل. يقدر مقدم الخدمة يعدّل المكان ويرسله للمراجعة.",
+): Promise<void> {
+  await requirePlaceAdmin();
+  const supabase = createAdminClient();
+  const { data: place, error: fetchError } = await supabase
+    .from("places")
+    .select("id,place_id,place_name,status,edit_request_status")
+    .eq("place_id", placeId)
+    .single();
+
+  if (fetchError) {
+    throw new Error(`تعذر جلب طلب التعديل: ${fetchError.message}`);
+  }
+
+  const existing = place as {
+    id: string;
+    place_id: number;
+    place_name: string | null;
+    status: string | null;
+    edit_request_status: string | null;
+  };
+  if (existing.status !== "approved" || existing.edit_request_status !== "pending") {
+    throw new Error("طلب التعديل لم يعد متاحًا للموافقة.");
+  }
+
+  const { error } = await supabase
+    .from("places")
+    .update({
+      edit_request_status: "approved",
+      edit_request_response: response,
+      edit_request_reviewed_at: new Date().toISOString(),
+      edit_allowed: true,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq("place_id", placeId)
+    .eq("edit_request_status", "pending");
+
+  if (error) {
+    throw new Error(`فشل قبول طلب التعديل: ${error.message}`);
+  }
+
+  await logAdminAction({
+    action: "approve_place_edit_request",
+    entityType: "place",
+    entityId: existing.id,
+    payload: {
+      place_id: existing.place_id,
+      place_name: existing.place_name,
+      response,
+      source: "dashboard",
+    },
+  });
+  revalidatePath("/dashboard/places");
+  revalidatePath("/dashboard/activity");
+}
+
+export async function rejectPlaceEditRequest(
+  placeId: number,
+  reason: string,
+): Promise<void> {
+  await requirePlaceAdmin();
+  const cleanReason = reason.trim();
+  if (!cleanReason) {
+    throw new Error("اكتب سبب رفض طلب التعديل.");
+  }
+
+  const supabase = createAdminClient();
+  const { data: place, error: fetchError } = await supabase
+    .from("places")
+    .select("id,place_id,place_name,status,edit_request_status")
+    .eq("place_id", placeId)
+    .single();
+
+  if (fetchError) {
+    throw new Error(`تعذر جلب طلب التعديل: ${fetchError.message}`);
+  }
+
+  const existing = place as {
+    id: string;
+    place_id: number;
+    place_name: string | null;
+    status: string | null;
+    edit_request_status: string | null;
+  };
+  if (existing.status !== "approved" || existing.edit_request_status !== "pending") {
+    throw new Error("طلب التعديل لم يعد متاحًا للرفض.");
+  }
+
+  const { error } = await supabase
+    .from("places")
+    .update({
+      edit_request_status: "rejected",
+      edit_request_response: cleanReason,
+      edit_request_reviewed_at: new Date().toISOString(),
+      edit_allowed: false,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq("place_id", placeId)
+    .eq("edit_request_status", "pending");
+
+  if (error) {
+    throw new Error(`فشل رفض طلب التعديل: ${error.message}`);
+  }
+
+  await logAdminAction({
+    action: "reject_place_edit_request",
+    entityType: "place",
+    entityId: existing.id,
+    payload: {
+      place_id: existing.place_id,
+      place_name: existing.place_name,
+      reason: cleanReason,
+      source: "dashboard",
+    },
+  });
+  revalidatePath("/dashboard/places");
+  revalidatePath("/dashboard/activity");
 }

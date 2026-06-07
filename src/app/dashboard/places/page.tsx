@@ -3,8 +3,15 @@ import Link from "next/link";
 import { Plus, MapPin, Star, Trophy, Hourglass, CheckCircle2 } from "lucide-react";
 import s from "../shared.module.css";
 import PlacesFilters from "./PlacesFilters";
-import { deletePlace, setPlaceStatus, setPlaceEditAllowed } from "./actions";
+import {
+  approvePlaceEditRequest,
+  deletePlace,
+  rejectPlaceEditRequest,
+  setPlaceEditAllowed,
+  setPlaceStatus,
+} from "./actions";
 import { getProfileDirectory } from "@/lib/admin/users";
+import { currentAdminRole } from "@/lib/auth/role";
 
 export const metadata = { title: "إدارة الأماكن - رفيق" };
 
@@ -25,6 +32,12 @@ type RawPlaceRow = {
   rejection_reason: string | null;
   provider_id: string | null;
   edit_allowed: boolean | null;
+  edit_request_status: string | null;
+  edit_request_note: string | null;
+  edit_request_response: string | null;
+  edit_request_requested_at: string | null;
+  edit_request_reviewed_at: string | null;
+  edit_submitted_at: string | null;
 };
 
 type ProviderInfoRow = {
@@ -46,6 +59,7 @@ type CampaignLiteRow = {
 
 export default async function PlacesPage() {
   const supabase = createAdminClient();
+  const role = await currentAdminRole();
   const analyticsCutoff = new Date();
   analyticsCutoff.setDate(analyticsCutoff.getDate() - 30);
   const analyticsCutoffIso = analyticsCutoff.toISOString();
@@ -61,7 +75,7 @@ export default async function PlacesPage() {
       supabase
         .from("places")
         .select(
-          "id,place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id,edit_allowed",
+          "id,place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id,edit_allowed,edit_request_status,edit_request_note,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_submitted_at",
         )
         .order("created_at", { ascending: false })
         .limit(250),
@@ -281,6 +295,9 @@ export default async function PlacesPage() {
         deleteAction={deletePlace}
         setStatusAction={setPlaceStatus}
         setEditAllowedAction={setPlaceEditAllowed}
+        approveEditRequestAction={approvePlaceEditRequest}
+        rejectEditRequestAction={rejectPlaceEditRequest}
+        canDelete={role === "super_admin"}
       />
     </div>
   );

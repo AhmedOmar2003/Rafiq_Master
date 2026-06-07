@@ -644,6 +644,27 @@ button:focus-visible,
 .dangerBtn:hover { background: rgba(220, 38, 38, 0.18); }
 .dangerBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.secondaryBtn {
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondaryBtn:hover {
+  background: var(--color-background);
+}
+
+.secondaryBtn:focus-visible {
+  outline: 3px solid rgba(104, 31, 0, 0.22);
+  outline-offset: 2px;
+}
+
 .noteBox {
   background: rgba(59, 130, 246, 0.08);
   border: 1px solid rgba(59, 130, 246, 0.18);
