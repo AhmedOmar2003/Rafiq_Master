@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, MapPin, Star, Settings, LogOut, Activity,
-  Bell, Search, Menu, X, ChevronLeft, Store, CreditCard, Gavel, ShieldAlert,
+  Bell, Menu, X, ChevronLeft, Store, CreditCard, Gavel, ShieldAlert,
   Megaphone,
 } from "lucide-react";
 import styles from "./layout.module.css";
@@ -53,6 +53,16 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+  const logoutButtonRef = useRef<HTMLButtonElement>(null);
+  const logoutDialogRef = useRef<HTMLDivElement>(null);
+
+  const closeLogoutModal = () => {
+    setShowLogoutModal(false);
+    setLogoutError("");
+    window.requestAnimationFrame(() => logoutButtonRef.current?.focus());
+  };
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 1024px)");
@@ -62,10 +72,44 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
     return () => media.removeEventListener("change", syncSidebar);
   }, []);
 
+  useEffect(() => {
+    if (!showLogoutModal) return;
+    const handleDialogKeyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isLoggingOut) {
+        closeLogoutModal();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = logoutDialogRef.current?.querySelectorAll<HTMLElement>(
+        "button:not(:disabled), a[href], input:not(:disabled), [tabindex]:not([tabindex='-1'])",
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleDialogKeyboard);
+    return () => document.removeEventListener("keydown", handleDialogKeyboard);
+  }, [showLogoutModal, isLoggingOut]);
+
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    setLogoutError("");
     const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setLogoutError("معرفناش نسجّل خروجك دلوقتي. جرّب تاني.");
+      setIsLoggingOut(false);
+      return;
+    }
+    window.location.assign("/login");
   };
 
   // Breadcrumb
@@ -90,6 +134,7 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
       {/* ── Sidebar ── */}
       <aside
         className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : styles.sidebarClosed} ${isCollapsed ? styles.sidebarCollapsed : ""}`}
+        aria-label="التنقل الرئيسي"
       >
         {/* Logo */}
         <div className={styles.sidebarHeader}>
@@ -121,7 +166,7 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
         </div>
 
         {/* Nav */}
-        <nav className={styles.nav}>
+        <nav className={styles.nav} aria-label="أقسام لوحة التحكم">
           {!isCollapsed && (
             <span className={styles.navGroupLabel}>القائمة الرئيسية</span>
           )}
@@ -135,6 +180,11 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
                 className={`${styles.navItem} ${isActive ? styles.navItemActive : ""}`}
                 aria-current={isActive ? "page" : undefined}
                 title={isCollapsed ? item.name : undefined}
+                onClick={() => {
+                  if (window.matchMedia("(max-width: 1024px)").matches) {
+                    setIsSidebarOpen(false);
+                  }
+                }}
               >
                 <div className={styles.navItemIcon}>
                   <item.icon size={19} />
@@ -163,6 +213,7 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
             </div>
           )}
           <button
+            ref={logoutButtonRef}
             onClick={() => setShowLogoutModal(true)}
             className={styles.logoutButton}
             title={isCollapsed ? "تسجيل الخروج" : undefined}
@@ -198,29 +249,21 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
               </div>
             )}
 
-            <div className={styles.searchContainer}>
-              <Search className={styles.searchIcon} size={15} aria-hidden="true" />
-              <input
-                type="search"
-                placeholder="ابحث في الداشبورد..."
-                className={styles.searchInput}
-                aria-label="البحث في لوحة التحكم"
-              />
-            </div>
           </div>
 
           <div className={styles.topbarRight}>
-            <button
+            <Link
+              href="/dashboard/activity"
               className={`${styles.iconBtn} ${styles.bellBtn}`}
-              aria-label="الإشعارات"
-              title="الإشعارات"
+              aria-label="افتح سجل النشاط"
+              title="سجل النشاط"
             >
               <Bell size={19} aria-hidden="true" />
-            </button>
+            </Link>
 
             <div className={styles.topbarDivider} />
 
-            <div className={styles.profileChip}>
+            <div className={styles.profileChip} aria-label={`${displayName}، ${roleLabel}`}>
               <div className={styles.profileAvatar}>{avatarLetter}</div>
               <div className={styles.profileInfo}>
                 <span className={styles.profileName}>{displayName}</span>
@@ -238,9 +281,17 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
 
       {/* ── Logout Modal ── */}
       {showLogoutModal && (
-        <div className={styles.modalOverlay}>
+        <div
+          className={styles.modalOverlay}
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target && !isLoggingOut) {
+              closeLogoutModal();
+            }
+          }}
+        >
           <div
             className={styles.modalContent}
+            ref={logoutDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="logout-dialog-title"
@@ -254,18 +305,28 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
             <p className={styles.modalBody}>
               هل أنت متأكد أنك تريد تسجيل الخروج من لوحة تحكم رفيق؟
             </p>
+            {logoutError && (
+              <p className={styles.modalError} role="alert" aria-live="assertive">
+                {logoutError}
+              </p>
+            )}
             <div className={styles.modalActions}>
-              <button 
-                onClick={() => setShowLogoutModal(false)}
+              <button
+                onClick={() => {
+                  closeLogoutModal();
+                }}
                 className={styles.modalCancelBtn}
+                disabled={isLoggingOut}
+                autoFocus
               >
                 إلغاء
               </button>
-              <button 
+              <button
                 onClick={handleLogout}
                 className={styles.modalConfirmBtn}
+                disabled={isLoggingOut}
               >
-                تأكيد الخروج
+                {isLoggingOut ? "جارٍ تسجيل الخروج..." : "تأكيد الخروج"}
               </button>
             </div>
           </div>

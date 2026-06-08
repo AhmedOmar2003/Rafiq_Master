@@ -8,6 +8,7 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
+  overscroll-behavior-inline: contain;
 }
 
 /* ── Page Shell ─────────────────────────────────────── */
@@ -404,6 +405,7 @@
   border: 1px solid rgba(0,0,0,0.04);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
   transition: box-shadow 0.3s ease;
 }
 
@@ -711,6 +713,7 @@ button:focus-visible,
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 768px) {
+  .page { gap: 1.25rem; }
   .pageTitle { font-size: 1.25rem; }
   .pageHeader { flex-direction: column; }
   .pageHeaderRight { width: 100%; flex-wrap: wrap; }
@@ -728,6 +731,14 @@ button:focus-visible,
     flex-wrap: wrap;
   }
   .resultsCount { text-align: center; }
+  .chipGroup {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+  }
+  .chip { flex: 0 0 auto; }
+  .table { min-width: 680px; }
 }
 
 @media (max-width: 480px) {
