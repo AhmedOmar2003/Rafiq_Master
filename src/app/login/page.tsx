@@ -41,7 +41,8 @@ export default function LoginPage() {
             id="password"
             name="password"
             required
-            placeholder="••••"
+            placeholder="مثال: Ahmed11#"
+            autoComplete="current-password"
             dir="ltr"
           />
 

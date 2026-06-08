@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, X, User, Mail, Lock, Phone, Store, Shield, ShieldCheck } from "lucide-react";
+import { Plus, X, User, Mail, Lock, Phone, Store, Shield, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { createUser, type NewUserInput } from "./actions";
+import { isStrongPassword } from "@/lib/security/password";
 
 type Role = NewUserInput["role"];
 
@@ -26,6 +27,11 @@ export default function AddUserButton() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [pending, startTransition] = useTransition();
+  const canSubmit =
+    form.email.includes("@") &&
+    form.fullName.trim().length > 0 &&
+    isStrongPassword(form.password) &&
+    (form.role !== "provider" || Boolean(form.businessName?.trim()));
 
   function close() {
     if (pending) return;
@@ -169,14 +175,22 @@ export default function AddUserButton() {
               dir="ltr"
             />
 
-            <Label icon={<Lock size={14} />} text="كلمة المرور * (٨ أحرف على الأقل)" />
+            <Label icon={<Lock size={14} />} text="كلمة المرور *" />
             <Input
               value={form.password}
               onChange={(v) => setForm((f) => ({ ...f, password: v }))}
               type="password"
-              placeholder="••••••••"
+              placeholder="مثال: Ahmed11#"
               dir="ltr"
             />
+            <p style={{
+              margin: "-0.35rem 0 0.9rem",
+              color: isStrongPassword(form.password) ? "#047857" : "var(--color-text-tertiary)",
+              fontSize: "0.78rem",
+              fontWeight: 600,
+            }}>
+              {isStrongPassword(form.password) ? "✓ كلمة المرور قوية" : "٨ أحرف + حرف كبير وصغير + رقم + رمز"}
+            </p>
 
             <Label icon={<Phone size={14} />} text="رقم الموبايل (اختياري)" />
             <Input
@@ -208,7 +222,7 @@ export default function AddUserButton() {
             <div style={{ display: "flex", gap: "0.6rem", marginTop: "1.25rem" }}>
               <button
                 onClick={close}
-                disabled={pending}
+                disabled={pending || !canSubmit}
                 style={{
                   flex: 1, padding: "0.75rem",
                   border: "1.5px solid var(--color-border)",
@@ -228,8 +242,8 @@ export default function AddUserButton() {
                   background: "var(--color-primary)", color: "#fff",
                   border: "none",
                   borderRadius: "var(--radius-md)",
-                  cursor: pending ? "not-allowed" : "pointer",
-                  opacity: pending ? 0.6 : 1,
+                  cursor: pending || !canSubmit ? "not-allowed" : "pointer",
+                  opacity: pending || !canSubmit ? 0.6 : 1,
                   fontWeight: 800, fontSize: "0.9rem",
                 }}
               >
@@ -265,16 +279,22 @@ function Input({
   type?: string;
   dir?: "ltr" | "rtl";
 }) {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const isPassword = type === "password";
   return (
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      dir={dir}
-      style={{
-        width: "100%", boxSizing: "border-box",
-        padding: "0.8rem 1rem",
+    <div style={{ position: "relative" }}>
+      <input
+        type={isPassword && passwordVisible ? "text" : type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        dir={dir}
+        autoCorrect={isPassword ? "off" : undefined}
+        autoCapitalize={isPassword ? "none" : undefined}
+        autoComplete={isPassword ? "new-password" : undefined}
+        style={{
+          width: "100%", boxSizing: "border-box",
+          padding: isPassword ? "0.8rem 3rem 0.8rem 1rem" : "0.8rem 1rem",
         border: "1.5px solid var(--color-border)",
         borderRadius: "var(--radius-md)",
         fontSize: "0.92rem", fontFamily: "inherit",
@@ -290,7 +310,34 @@ function Input({
       onBlur={(e) => {
         e.target.style.borderColor = "var(--color-border)";
         e.target.style.boxShadow = "none";
-      }}
-    />
+        }}
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setPasswordVisible((visible) => !visible)}
+          aria-label={passwordVisible ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+          title={passwordVisible ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+          style={{
+            position: "absolute",
+            right: "0.65rem",
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 36,
+            height: 36,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--color-text-tertiary)",
+            background: "transparent",
+            border: 0,
+            borderRadius: "var(--radius-sm)",
+            cursor: "pointer",
+          }}
+        >
+          {passwordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
+    </div>
   );
 }

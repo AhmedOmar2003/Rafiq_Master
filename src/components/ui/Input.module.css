@@ -89,6 +89,27 @@
   justify-content: center;
 }
 
+.passwordToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.passwordToggle:hover,
+.passwordToggle:focus-visible {
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  outline: none;
+}
+
 .helperText {
   font-size: 14px;
   color: var(--color-text-tertiary);

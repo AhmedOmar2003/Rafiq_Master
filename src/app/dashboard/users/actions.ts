@@ -5,6 +5,10 @@ import { createClient as createSsrClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { currentAdminRole } from "@/lib/auth/role";
 import { logAdminAction } from "@/lib/admin/audit";
+import {
+  isStrongPassword,
+  passwordRequirementMessage,
+} from "@/lib/security/password";
 
 type ProviderIdRow = { id: string };
 type PlaceIdRow = { id: string; image_path: string | null };
@@ -179,8 +183,8 @@ export async function createUser(input: NewUserInput): Promise<{ id: string }> {
     throw new Error("صيغة الإيميل غير صحيحة");
   }
   const finalPassword = input.password.trim();
-  if (!finalPassword || finalPassword.length < 8) {
-    throw new Error("كلمة المرور لازم ٨ أحرف على الأقل");
+  if (!isStrongPassword(finalPassword)) {
+    throw new Error(passwordRequirementMessage());
   }
   if (!input.fullName?.trim()) {
     throw new Error("اسم المستخدم مطلوب");
