@@ -437,6 +437,7 @@ export default function PlacesFilters({
             ) : (
               filtered.map((place) => {
                 const color = ACTIVITY_COLORS[place.activity_name] || "#681F00";
+                const addedByAdmin = !place.provider_id;
                 return (
                   <tr key={place.place_id}>
                     <td>
@@ -477,7 +478,7 @@ export default function PlacesFilters({
                         business={place.owner_business}
                         email={place.owner_email}
                         name={place.owner_name}
-                        addedByAdmin={!place.provider_id}
+                        addedByAdmin={addedByAdmin}
                       />
                     </td>
                     <td style={{ fontSize: "0.88rem" }}>{place.city_name}</td>
@@ -575,7 +576,8 @@ export default function PlacesFilters({
                     </td>
                     <td>
                       <div className={s.actionGroup}>
-                        {place.edit_request_status === "pending" &&
+                        {!addedByAdmin &&
+                          place.edit_request_status === "pending" &&
                           approveEditRequestAction && (
                             <form
                               action={approveEditRequestAction.bind(
@@ -594,7 +596,8 @@ export default function PlacesFilters({
                               </button>
                             </form>
                           )}
-                        {place.edit_request_status === "pending" &&
+                        {!addedByAdmin &&
+                          place.edit_request_status === "pending" &&
                           rejectEditRequestAction && (
                             <button
                               type="button"
@@ -609,7 +612,9 @@ export default function PlacesFilters({
                               <XCircle size={16} />
                             </button>
                           )}
-                        {setStatusAction && (place.status ?? "pending") !== "approved" && (
+                        {!addedByAdmin &&
+                          setStatusAction &&
+                          (place.status ?? "pending") !== "approved" && (
                           <form action={setStatusAction.bind(null, place.place_id, "approved", undefined, undefined)}>
                             <button
                               type="submit"
@@ -620,7 +625,9 @@ export default function PlacesFilters({
                             </button>
                           </form>
                         )}
-                        {setStatusAction && (place.status ?? "pending") !== "rejected" && (
+                        {!addedByAdmin &&
+                          setStatusAction &&
+                          (place.status ?? "pending") !== "rejected" && (
                           <button
                             type="button"
                             className={`${s.actionBtn} ${s.actionBtnReject}`}
@@ -634,7 +641,9 @@ export default function PlacesFilters({
                             <XCircle size={16} />
                           </button>
                         )}
-                        {setStatusAction && (place.status ?? "pending") !== "pending" && (
+                        {!addedByAdmin &&
+                          setStatusAction &&
+                          (place.status ?? "pending") !== "pending" && (
                           <form action={setStatusAction.bind(null, place.place_id, "pending", undefined, undefined)}>
                             <button
                               type="submit"
