@@ -167,9 +167,6 @@ export async function setPlaceStatus(
   await requirePlaceAdmin();
   const supabase = createAdminClient();
 
-  // Migration 0030 relaxes the moderation trigger for service_role, so the
-  // admin dashboard can update the row directly and let the DB fire the
-  // moderation history trigger as usual.
   const { data: existingPlaceRaw, error: fetchError } = await supabase
     .from("places")
     .select(
@@ -192,47 +189,16 @@ export async function setPlaceStatus(
     edit_request_status: string | null;
   };
 
-  const { error } = await supabase
-    .from("places")
-    .update({
-      status,
-      rejection_reason: status === "rejected" ? rejectionReason ?? null : null,
-      // edit_allowed is only meaningful while the place sits in 'rejected'.
-      // For any other status we reset it to false so a future rejection
-      // doesn't inherit a stale "true" from the past.
-      edit_allowed: status === "rejected" ? (allowEdit ?? false) : false,
-      edit_request_status:
-        status === "approved"
-          ? "none"
-          : status === "rejected" &&
-              existingPlace.edit_request_status === "submitted"
-            ? "rejected"
-            : existingPlace.edit_request_status ?? "none",
-      edit_request_response:
-        status === "rejected" &&
-        existingPlace.edit_request_status === "submitted"
-          ? rejectionReason ?? null
-          : status === "approved"
-            ? null
-            : undefined,
-      edit_request_reviewed_at:
-        status === "rejected" &&
-        existingPlace.edit_request_status === "submitted"
-          ? new Date().toISOString()
-          : status === "approved"
-            ? null
-            : undefined,
-      approved_at:
-        status === "approved"
-          ? new Date().toISOString()
-          : existingPlace.approved_at,
-      suspended_at:
-        status === "suspended"
-          ? new Date().toISOString()
-          : existingPlace.suspended_at,
-      updated_at: new Date().toISOString(),
-    } as never)
-    .eq("place_id", placeId);
+  const cleanReason = rejectionReason?.trim() ?? "";
+  const { error } = await supabase.rpc(
+    "admin_set_place_status" as never,
+    {
+      _place_id: placeId,
+      _status: status,
+      _rejection_reason: status === "rejected" ? cleanReason || null : null,
+      _allow_edit: status === "rejected" ? (allowEdit ?? false) : false,
+    } as never,
+  );
 
   if (error) {
     throw new Error(`فشل تحديث الحالة: ${error.message}`);
@@ -247,7 +213,7 @@ export async function setPlaceStatus(
       place_name: existingPlace.place_name,
       from_status: existingPlace.status,
       to_status: status,
-      rejection_reason: rejectionReason ?? null,
+      rejection_reason: cleanReason || null,
       allow_edit: allowEdit ?? null,
       source: "dashboard",
     },
