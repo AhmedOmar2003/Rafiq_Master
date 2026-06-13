@@ -40,7 +40,7 @@ export async function createPlace(formData: FormData) {
   const { data: inserted, error } = await supabase
     .from("places")
     .insert(rawData as never)
-    .select("id,place_id,place_name,status")
+    .select("id,place_name,status")
     .single();
 
   if (error) {
@@ -52,7 +52,7 @@ export async function createPlace(formData: FormData) {
     entityType: "place",
     entityId: (inserted as { id?: string } | null)?.id ?? null,
     payload: {
-      place_id: (inserted as { place_id?: number } | null)?.place_id ?? null,
+      place_id: (inserted as { id?: string } | null)?.id ?? null,
       place_name: (inserted as { place_name?: string } | null)?.place_name ?? rawData.place_name,
       status: (inserted as { status?: string } | null)?.status ?? rawData.status,
       source: "dashboard",
@@ -63,7 +63,7 @@ export async function createPlace(formData: FormData) {
   redirect("/dashboard/places");
 }
 
-export async function updatePlace(place_id: number, formData: FormData) {
+export async function updatePlace(placeId: string, formData: FormData) {
   await requirePlaceAdmin();
   const supabase = createAdminClient();
 
@@ -84,8 +84,8 @@ export async function updatePlace(place_id: number, formData: FormData) {
   const { data: updated, error } = await supabase
     .from("places")
     .update(rawData as never)
-    .select("id,place_id,place_name")
-    .eq("place_id", place_id);
+    .select("id,place_name")
+    .eq("id", placeId);
 
   if (error) {
     throw new Error(error.message);
@@ -93,7 +93,6 @@ export async function updatePlace(place_id: number, formData: FormData) {
 
   const updatedPlace = ((updated ?? []) as Array<{
     id: string;
-    place_id: number;
     place_name: string | null;
   }>)[0];
 
@@ -102,7 +101,7 @@ export async function updatePlace(place_id: number, formData: FormData) {
     entityType: "place",
     entityId: updatedPlace?.id ?? null,
     payload: {
-      place_id,
+      place_id: placeId,
       place_name: updatedPlace?.place_name ?? rawData.place_name,
       source: "dashboard",
     },
@@ -112,16 +111,16 @@ export async function updatePlace(place_id: number, formData: FormData) {
   redirect("/dashboard/places");
 }
 
-export async function deletePlace(place_id: number): Promise<void> {
+export async function deletePlace(placeId: string): Promise<void> {
   await requirePlaceAdmin({ superAdmin: true });
   const supabase = createAdminClient();
   const { data: existingPlace } = await supabase
     .from("places")
     .select("id,place_name")
-    .eq("place_id", place_id)
+    .eq("id", placeId)
     .maybeSingle();
 
-  const { error } = await supabase.from("places").delete().eq("place_id", place_id);
+  const { error } = await supabase.from("places").delete().eq("id", placeId);
 
   if (error) {
     throw new Error(error.message);
@@ -132,7 +131,7 @@ export async function deletePlace(place_id: number): Promise<void> {
     entityType: "place",
     entityId: (existingPlace as { id?: string } | null)?.id ?? null,
     payload: {
-      place_id,
+      place_id: placeId,
       place_name: (existingPlace as { place_name?: string } | null)?.place_name ?? null,
       source: "dashboard",
     },
@@ -154,7 +153,7 @@ export async function deletePlace(place_id: number): Promise<void> {
  * carry stale text.
  */
 export async function setPlaceStatus(
-  placeId: number,
+  placeId: string,
   status: "pending" | "under_review" | "approved" | "rejected" | "suspended",
   rejectionReason?: string,
   /**
@@ -170,9 +169,9 @@ export async function setPlaceStatus(
   const { data: existingPlaceRaw, error: fetchError } = await supabase
     .from("places")
     .select(
-      "id,place_id,place_name,approved_at,suspended_at,status,edit_request_status",
+      "id,place_name,approved_at,suspended_at,status,edit_request_status",
     )
-    .eq("place_id", placeId)
+    .eq("id", placeId)
     .single();
 
   if (fetchError) {
@@ -181,7 +180,6 @@ export async function setPlaceStatus(
 
   const existingPlace = existingPlaceRaw as {
     id: string;
-    place_id: number;
     place_name: string | null;
     approved_at: string | null;
     suspended_at: string | null;
@@ -191,9 +189,9 @@ export async function setPlaceStatus(
 
   const cleanReason = rejectionReason?.trim() ?? "";
   const { error } = await supabase.rpc(
-    "admin_set_place_status" as never,
+    "admin_set_place_status_uuid" as never,
     {
-      _place_id: placeId,
+      _place_uuid: placeId,
       _status: status,
       _rejection_reason: status === "rejected" ? cleanReason || null : null,
       _allow_edit: status === "rejected" ? (allowEdit ?? false) : false,
@@ -209,7 +207,7 @@ export async function setPlaceStatus(
     entityType: "place",
     entityId: existingPlace.id,
     payload: {
-      place_id: existingPlace.place_id,
+      place_id: existingPlace.id,
       place_name: existingPlace.place_name,
       from_status: existingPlace.status,
       to_status: status,
@@ -227,15 +225,15 @@ export async function setPlaceStatus(
  * after the initial decision (e.g. provider DMed asking for another chance).
  */
 export async function setPlaceEditAllowed(
-  placeId: number,
+  placeId: string,
   allowed: boolean,
 ): Promise<void> {
   await requirePlaceAdmin();
   const supabase = createAdminClient();
   const { data: existingPlace } = await supabase
     .from("places")
-    .select("id,place_id,place_name")
-    .eq("place_id", placeId)
+    .select("id,place_name")
+    .eq("id", placeId)
     .maybeSingle();
 
   const { error } = await supabase
@@ -244,7 +242,7 @@ export async function setPlaceEditAllowed(
       edit_allowed: allowed,
       updated_at: new Date().toISOString(),
     } as never)
-    .eq("place_id", placeId);
+    .eq("id", placeId);
   if (error) {
     throw new Error(`فشل تعديل صلاحية التعديل: ${error.message}`);
   }
@@ -264,15 +262,15 @@ export async function setPlaceEditAllowed(
 }
 
 export async function approvePlaceEditRequest(
-  placeId: number,
+  placeId: string,
   response = "تمت الموافقة على طلب التعديل. يقدر مقدم الخدمة يعدّل المكان ويرسله للمراجعة.",
 ): Promise<void> {
   await requirePlaceAdmin();
   const supabase = createAdminClient();
   const { data: place, error: fetchError } = await supabase
     .from("places")
-    .select("id,place_id,place_name,status,edit_request_status")
-    .eq("place_id", placeId)
+    .select("id,place_name,status,edit_request_status")
+    .eq("id", placeId)
     .single();
 
   if (fetchError) {
@@ -281,7 +279,6 @@ export async function approvePlaceEditRequest(
 
   const existing = place as {
     id: string;
-    place_id: number;
     place_name: string | null;
     status: string | null;
     edit_request_status: string | null;
@@ -299,7 +296,7 @@ export async function approvePlaceEditRequest(
       edit_allowed: true,
       updated_at: new Date().toISOString(),
     } as never)
-    .eq("place_id", placeId)
+    .eq("id", placeId)
     .eq("edit_request_status", "pending");
 
   if (error) {
@@ -311,7 +308,7 @@ export async function approvePlaceEditRequest(
     entityType: "place",
     entityId: existing.id,
     payload: {
-      place_id: existing.place_id,
+      place_id: existing.id,
       place_name: existing.place_name,
       response,
       source: "dashboard",
@@ -322,7 +319,7 @@ export async function approvePlaceEditRequest(
 }
 
 export async function rejectPlaceEditRequest(
-  placeId: number,
+  placeId: string,
   reason: string,
 ): Promise<void> {
   await requirePlaceAdmin();
@@ -334,8 +331,8 @@ export async function rejectPlaceEditRequest(
   const supabase = createAdminClient();
   const { data: place, error: fetchError } = await supabase
     .from("places")
-    .select("id,place_id,place_name,status,edit_request_status")
-    .eq("place_id", placeId)
+    .select("id,place_name,status,edit_request_status")
+    .eq("id", placeId)
     .single();
 
   if (fetchError) {
@@ -344,7 +341,6 @@ export async function rejectPlaceEditRequest(
 
   const existing = place as {
     id: string;
-    place_id: number;
     place_name: string | null;
     status: string | null;
     edit_request_status: string | null;
@@ -362,7 +358,7 @@ export async function rejectPlaceEditRequest(
       edit_allowed: false,
       updated_at: new Date().toISOString(),
     } as never)
-    .eq("place_id", placeId)
+    .eq("id", placeId)
     .eq("edit_request_status", "pending");
 
   if (error) {
@@ -374,7 +370,7 @@ export async function rejectPlaceEditRequest(
     entityType: "place",
     entityId: existing.id,
     payload: {
-      place_id: existing.place_id,
+      place_id: existing.id,
       place_name: existing.place_name,
       reason: cleanReason,
       source: "dashboard",
