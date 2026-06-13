@@ -28,7 +28,13 @@ type RawPlaceRow = {
   rating: number;
   budget: string;
   image_path: string | null;
-  status: "pending" | "approved" | "rejected" | "suspended" | null;
+  status:
+    | "pending"
+    | "under_review"
+    | "approved"
+    | "rejected"
+    | "suspended"
+    | null;
   created_at: string;
   rejection_reason: string | null;
   provider_id: string | null;
@@ -250,7 +256,9 @@ export default async function PlacesPage() {
       edit_submission: latestEditSubmissionByPlace.get(row.id) ?? null,
     };
   });
-  const pendingCount = placeRows.filter((p) => (p.status ?? "pending") === "pending").length;
+  const pendingCount = placeRows.filter((p) =>
+    ["pending", "under_review"].includes(p.status ?? "pending"),
+  ).length;
   const approvedCount = placeRows.filter((p) => p.status === "approved").length;
 
   // Activity distribution
