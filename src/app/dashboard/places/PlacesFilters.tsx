@@ -22,8 +22,7 @@ type PlaceEditSubmission = {
 };
 
 type PlaceRow = {
-  id?: string;
-  place_id: number;
+  id: string;
   place_name: string;
   city_name: string;
   activity_name: string;
@@ -113,17 +112,17 @@ export default function PlacesFilters({
   canDelete,
 }: {
   places: PlaceRow[];
-  deleteAction: (id: number) => Promise<void>;
+  deleteAction: (id: string) => Promise<void>;
   setStatusAction?: (
-    id: number,
+    id: string,
     status: PlaceStatus,
     rejectionReason?: string,
     allowEdit?: boolean,
   ) => Promise<void>;
   /** Flip the edit_allowed flag on a place that's already rejected. */
-  setEditAllowedAction?: (id: number, allowed: boolean) => Promise<void>;
-  approveEditRequestAction?: (id: number, response?: string) => Promise<void>;
-  rejectEditRequestAction?: (id: number, reason: string) => Promise<void>;
+  setEditAllowedAction?: (id: string, allowed: boolean) => Promise<void>;
+  approveEditRequestAction?: (id: string, response?: string) => Promise<void>;
+  rejectEditRequestAction?: (id: string, reason: string) => Promise<void>;
   approveEditSubmissionAction?: (submissionId: string) => Promise<void>;
   rejectEditSubmissionAction?: (
     submissionId: string,
@@ -272,7 +271,7 @@ export default function PlacesFilters({
             <ul className={s.suggestions}>
               {suggestions.map((p) => (
                 <li
-                  key={p.place_id}
+                  key={p.id}
                   className={s.suggestionItem}
                   onMouseDown={() => { setSearchQuery(p.place_name); setShowSuggestions(false); }}
                 >
@@ -439,7 +438,7 @@ export default function PlacesFilters({
                 const color = ACTIVITY_COLORS[place.activity_name] || "#681F00";
                 const addedByAdmin = !place.provider_id;
                 return (
-                  <tr key={place.place_id}>
+                  <tr key={place.id}>
                     <td>
                       <div className={s.infoCell}>
                         {place.image_path ? (
@@ -554,7 +553,7 @@ export default function PlacesFilters({
                           <EditAllowedToggle
                             place={place}
                             onChange={(allowed) =>
-                              setEditAllowedAction(place.place_id, allowed)
+                              setEditAllowedAction(place.id, allowed)
                             }
                           />
                         )}
@@ -582,7 +581,7 @@ export default function PlacesFilters({
                             <form
                               action={approveEditRequestAction.bind(
                                 null,
-                                place.place_id,
+                                place.id,
                                 undefined,
                               )}
                             >
@@ -615,7 +614,7 @@ export default function PlacesFilters({
                         {!addedByAdmin &&
                           setStatusAction &&
                           (place.status ?? "pending") !== "approved" && (
-                          <form action={setStatusAction.bind(null, place.place_id, "approved", undefined, undefined)}>
+                          <form action={setStatusAction.bind(null, place.id, "approved", undefined, undefined)}>
                             <button
                               type="submit"
                               className={`${s.actionBtn} ${s.actionBtnApprove}`}
@@ -644,7 +643,7 @@ export default function PlacesFilters({
                         {!addedByAdmin &&
                           setStatusAction &&
                           (place.status ?? "pending") !== "pending" && (
-                          <form action={setStatusAction.bind(null, place.place_id, "pending", undefined, undefined)}>
+                          <form action={setStatusAction.bind(null, place.id, "pending", undefined, undefined)}>
                             <button
                               type="submit"
                               className={`${s.actionBtn} ${s.actionBtnPending}`}
@@ -655,7 +654,7 @@ export default function PlacesFilters({
                           </form>
                         )}
                         <Link
-                          href={`/dashboard/places/${place.place_id}/edit`}
+                          href={`/dashboard/places/${place.id}/edit`}
                           className={`${s.actionBtn} ${s.actionBtnEdit}`}
                           title="تعديل"
                         >
@@ -667,7 +666,7 @@ export default function PlacesFilters({
                             message={`سيتم حذف "${place.place_name}" نهائيًا من النظام. هذا الإجراء لا يمكن التراجع عنه.`}
                             confirmLabel="تأكيد الحذف"
                             pendingLabel="جارٍ الحذف..."
-                            formAction={deleteAction.bind(null, place.place_id)}
+                            formAction={deleteAction.bind(null, place.id)}
                             triggerClassName={`${s.actionBtn} ${s.actionBtnDelete}`}
                             triggerTitle="حذف"
                           >
@@ -825,7 +824,7 @@ export default function PlacesFilters({
                   const reason = rejectReason.trim();
                   const allowEdit = rejectAllowEdit;
                   startTransition(async () => {
-                    await setStatusAction(target.place_id, "rejected", reason, allowEdit);
+                    await setStatusAction(target.id, "rejected", reason, allowEdit);
                     setRejectTarget(null);
                     setRejectReason("");
                     setRejectAllowEdit(false);
@@ -942,7 +941,7 @@ export default function PlacesFilters({
                   const target = editRequestRejectTarget;
                   const reason = editRequestRejectReason.trim();
                   startTransition(async () => {
-                    await rejectEditRequestAction(target.place_id, reason);
+                    await rejectEditRequestAction(target.id, reason);
                     setEditRequestRejectTarget(null);
                     setEditRequestRejectReason("");
                   });

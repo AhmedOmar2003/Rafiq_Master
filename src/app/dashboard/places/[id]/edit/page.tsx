@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { updatePlace } from "../../actions";
 
 type PlaceRow = {
-  place_id: number;
+  id: string;
   place_name: string;
   description: string;
   budget: string;
@@ -36,9 +36,13 @@ export default async function EditPlacePage({
   params: { id: string } | Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const placeId = Number(id);
+  const placeId = id.trim();
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      placeId,
+    );
 
-  if (Number.isNaN(placeId)) {
+  if (!isUuid) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -60,7 +64,7 @@ export default async function EditPlacePage({
   const { data: place, error } = await supabase
     .from("places")
     .select("*")
-    .eq("place_id", placeId)
+    .eq("id", placeId)
     .single();
 
   if (error || !place) {
@@ -76,7 +80,7 @@ export default async function EditPlacePage({
 
         <div className={styles.formCard}>
           <p style={{ color: "#b91c1c", fontWeight: 600 }}>
-            لم نستطع العثور على هذا المكان. ربما تم حذفه أو أن رقم المعرف غير موجود.
+            لم نستطع العثور على هذا المكان. ربما تم حذفه أو أن المعرّف غير موجود.
           </p>
         </div>
       </div>

@@ -22,14 +22,19 @@ export const revalidate = 0;
 
 type RawPlaceRow = {
   id: string;
-  place_id: number;
   place_name: string;
   city_name: string;
   activity_name: string;
   rating: number;
   budget: string;
   image_path: string | null;
-  status: "pending" | "approved" | "rejected" | "suspended" | null;
+  status:
+    | "pending"
+    | "under_review"
+    | "approved"
+    | "rejected"
+    | "suspended"
+    | null;
   created_at: string;
   rejection_reason: string | null;
   provider_id: string | null;
@@ -98,7 +103,7 @@ export default async function PlacesPage() {
       supabase
         .from("places")
         .select(
-          "id,place_id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id,edit_allowed,edit_request_status,edit_request_note,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_submitted_at",
+          "id,place_name,city_name,activity_name,rating,budget,image_path,created_at,status,rejection_reason,provider_id,edit_allowed,edit_request_status,edit_request_note,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_submitted_at",
         )
         .order("created_at", { ascending: false })
         .limit(250),
@@ -251,7 +256,9 @@ export default async function PlacesPage() {
       edit_submission: latestEditSubmissionByPlace.get(row.id) ?? null,
     };
   });
-  const pendingCount = placeRows.filter((p) => (p.status ?? "pending") === "pending").length;
+  const pendingCount = placeRows.filter((p) =>
+    ["pending", "under_review"].includes(p.status ?? "pending"),
+  ).length;
   const approvedCount = placeRows.filter((p) => p.status === "approved").length;
 
   // Activity distribution
