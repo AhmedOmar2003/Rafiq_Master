@@ -54,7 +54,13 @@ type ProviderInfoRow = {
   contact_email: string | null;
 };
 
-type AnalyticsEventRow = {
+type AnalyticsRollupRow = {
+  place_id: string | null;
+  kind: string;
+  event_count: number | null;
+};
+
+type AnalyticsTodayRow = {
   place_id: string | null;
   kind: string;
 };
@@ -83,6 +89,11 @@ export default async function PlacesPage() {
   const analyticsCutoff = new Date();
   analyticsCutoff.setDate(analyticsCutoff.getDate() - 30);
   const analyticsCutoffIso = analyticsCutoff.toISOString();
+  const analyticsCutoffDay = analyticsCutoffIso.slice(0, 10);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayStartIso = todayStart.toISOString();
+  const todayDay = todayStartIso.slice(0, 10);
 
   // Pull every read in parallel — but settle independently so one failure
   // doesn't tank the whole page. The providers + auth.users joins are
@@ -95,7 +106,8 @@ export default async function PlacesPage() {
     totalResult,
     providersResult,
     dirResult,
-    analyticsResult,
+    analyticsRollupsResult,
+    analyticsTodayResult,
     campaignsResult,
     editSubmissionsResult,
   ] =
@@ -114,10 +126,15 @@ export default async function PlacesPage() {
       // Indexed profiles directory instead of the unpaginated auth API.
       getProfileDirectory(),
       supabase
+        .from("analytics_daily_rollups")
+        .select("place_id,kind,event_count")
+        .gte("day", analyticsCutoffDay)
+        .lt("day", todayDay),
+      supabase
         .from("analytics_events")
         .select("place_id,kind")
-        .gte("occurred_at", analyticsCutoffIso)
-        .limit(5000),
+        .gte("occurred_at", todayStartIso)
+        .limit(1000),
       supabase
         .from("promotional_campaigns")
         .select("place_id,status"),
@@ -146,7 +163,14 @@ export default async function PlacesPage() {
 
   const places = unwrap<RawPlaceRow[]>("places", placesResult);
   const providersData = unwrap<ProviderInfoRow[]>("providers", providersResult);
-  const analyticsData = unwrap<AnalyticsEventRow[]>("analytics", analyticsResult);
+  const analyticsRollupData = unwrap<AnalyticsRollupRow[]>(
+    "analytics rollups",
+    analyticsRollupsResult,
+  );
+  const analyticsTodayData = unwrap<AnalyticsTodayRow[]>(
+    "analytics today",
+    analyticsTodayResult,
+  );
   const campaignsData = unwrap<CampaignLiteRow[]>("campaigns", campaignsResult);
   const editSubmissionsData = unwrap<EditSubmissionRow[]>(
     "place edit submissions",
@@ -191,7 +215,40 @@ export default async function PlacesPage() {
     string,
     { views: number; favorites: number; mapClicks: number; interactions: number }
   >();
-  for (const row of (analyticsData ?? []) as AnalyticsEventRow[]) {
+  for (const row of (analyticsRollupData ?? []) as AnalyticsRollupRow[]) {
+    if (!row.place_id) continue;
+    const current = analyticsByPlace.get(row.place_id) ?? {
+      views: 0,
+      favorites: 0,
+      mapClicks: 0,
+      interactions: 0,
+    };
+    const count = row.event_count ?? 0;
+    switch (row.kind) {
+      case "place_open":
+        current.views += count;
+        break;
+      case "place_favorite":
+        current.favorites += count;
+        current.interactions += count;
+        break;
+      case "place_map_open":
+        current.mapClicks += count;
+        current.interactions += count;
+        break;
+      case "place_unfavorite":
+      case "place_share":
+      case "place_phone_call":
+      case "place_website_click":
+      case "place_review_submit":
+      case "recommendation_click":
+        current.interactions += count;
+        break;
+    }
+    analyticsByPlace.set(row.place_id, current);
+  }
+
+  for (const row of (analyticsTodayData ?? []) as AnalyticsTodayRow[]) {
     if (!row.place_id) continue;
     const current = analyticsByPlace.get(row.place_id) ?? {
       views: 0,

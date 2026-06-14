@@ -58,6 +58,16 @@ type PlaceWithReviews = {
   rating: number;
 };
 
+type AnalyticsRollupRow = {
+  kind: string;
+  event_count: number | null;
+  day: string;
+};
+
+type AnalyticsTodayRow = {
+  kind: string;
+};
+
 function parseRange(value: string | string[] | undefined): number {
   const raw = Array.isArray(value) ? value[0] : value;
   const parsed = Number(raw);
@@ -79,6 +89,11 @@ export default async function DashboardOverview({
   const rangeDays = parseRange(params?.range);
   // eslint-disable-next-line react-hooks/purity
   const rangeStartIso = new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000).toISOString();
+  const rangeStartDay = rangeStartIso.slice(0, 10);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayStartIso = todayStart.toISOString();
+  const todayDay = todayStartIso.slice(0, 10);
 
   const [
     allUsers,
@@ -97,9 +112,8 @@ export default async function DashboardOverview({
     { count: pendingCampaignEditRequestsCount },
     { count: pendingPlaceEditRequestsCount },
     { count: openReportsCount },
-    { count: placeOpenCount },
-    { count: favoriteAddsCount },
-    { count: mapOpenCount },
+    { data: analyticsRollupsData },
+    { data: analyticsTodayData },
   ] = await Promise.all([
     // Full paginated roster — accurate count + growth bucketing at any scale.
     listAllAuthUsers(),
@@ -159,20 +173,16 @@ export default async function DashboardOverview({
       .select("*", { count: "exact", head: true })
       .eq("status", "open"),
     supabase
-      .from("analytics_events")
-      .select("*", { count: "exact", head: true })
-      .eq("kind", "place_open")
-      .gte("occurred_at", rangeStartIso),
+      .from("analytics_daily_rollups")
+      .select("kind,event_count,day")
+      .in("kind", ["place_open", "place_favorite", "place_map_open"])
+      .gte("day", rangeStartDay)
+      .lt("day", todayDay),
     supabase
       .from("analytics_events")
-      .select("*", { count: "exact", head: true })
-      .eq("kind", "place_favorite")
-      .gte("occurred_at", rangeStartIso),
-    supabase
-      .from("analytics_events")
-      .select("*", { count: "exact", head: true })
-      .eq("kind", "place_map_open")
-      .gte("occurred_at", rangeStartIso),
+      .select("kind")
+      .in("kind", ["place_open", "place_favorite", "place_map_open"])
+      .gte("occurred_at", todayStartIso),
   ]);
 
   const usersCount = allUsers.length;
@@ -182,6 +192,24 @@ export default async function DashboardOverview({
   const reviews = (reviewsData ?? []) as { rating: number | null }[];
   const recentPlaces = (recentPlacesData ?? []) as RecentPlaceRow[];
   const topPlaces = (topPlacesData ?? []) as PlaceWithReviews[];
+  const analyticsCounters = {
+    place_open: 0,
+    place_favorite: 0,
+    place_map_open: 0,
+  };
+  for (const row of (analyticsRollupsData ?? []) as AnalyticsRollupRow[]) {
+    const key = row.kind as keyof typeof analyticsCounters;
+    if (!(key in analyticsCounters)) continue;
+    analyticsCounters[key] += row.event_count ?? 0;
+  }
+  for (const row of (analyticsTodayData ?? []) as AnalyticsTodayRow[]) {
+    const key = row.kind as keyof typeof analyticsCounters;
+    if (!(key in analyticsCounters)) continue;
+    analyticsCounters[key] += 1;
+  }
+  const placeOpenCount = analyticsCounters.place_open;
+  const favoriteAddsCount = analyticsCounters.place_favorite;
+  const mapOpenCount = analyticsCounters.place_map_open;
 
   const avgRating =
     reviews && reviews.length > 0
