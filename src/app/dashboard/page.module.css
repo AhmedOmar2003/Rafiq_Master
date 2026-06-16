@@ -69,6 +69,265 @@
   white-space: nowrap;
 }
 
+/* ── Public Launch Safety ── */
+.safetyCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at top left, rgba(104, 31, 0, 0.10), transparent 34%),
+    var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.safetyStable {
+  border-color: rgba(16, 185, 129, 0.24);
+}
+
+.safetyWarning {
+  border-color: rgba(217, 119, 6, 0.30);
+  background:
+    radial-gradient(circle at top left, rgba(217, 119, 6, 0.12), transparent 34%),
+    var(--color-surface);
+}
+
+.safetyCritical {
+  border-color: rgba(220, 38, 38, 0.30);
+  background:
+    radial-gradient(circle at top left, rgba(220, 38, 38, 0.12), transparent 34%),
+    var(--color-surface);
+}
+
+.safetyHeader,
+.safetyBody,
+.alertsPanelHeader,
+.launchAlertItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.safetyTitleGroup {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.safetyIcon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
+}
+
+.safetyEyebrow {
+  margin: 0 0 0.2rem;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.safetyTitle {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.safetyStatusPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.42rem 0.9rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.safetyBody {
+  align-items: stretch;
+}
+
+.safetyMetricGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.safetyMetric {
+  padding: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.safetyMetricValue {
+  display: block;
+  color: var(--color-primary);
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.safetyMetricLabel {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.safetyActionBox {
+  width: min(100%, 330px);
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
+}
+
+.safetyActionBox strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.92rem;
+}
+
+.safetyActionBox p {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.safetyActionBox span {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.alertsPanel {
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.alertsPanelHeader {
+  margin-bottom: 0.85rem;
+}
+
+.alertsPanelHeader h3 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.alertsPanelHeader p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.launchAlertEmpty {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--color-success-alpha);
+  color: var(--color-success);
+  font-weight: 800;
+}
+
+.launchAlertsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.launchAlertItem {
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.launchAlertMain {
+  min-width: 0;
+}
+
+.launchAlertBadges,
+.launchAlertActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.launchAlertItem h4 {
+  margin: 0.55rem 0 0.25rem;
+  color: var(--color-text-primary);
+  font-size: 0.96rem;
+  font-weight: 900;
+}
+
+.launchAlertItem p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.launchAlertMeta {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--color-gray);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.alertPrimaryButton,
+.alertSecondaryButton {
+  min-height: 40px;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.alertPrimaryButton {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.alertSecondaryButton {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
 /* ── KPI Stats ── */
 .statsGrid {
   display: grid;
@@ -514,6 +773,14 @@
   .cardMedium {
     grid-column: span 1;
   }
+
+  .safetyBody {
+    flex-direction: column;
+  }
+
+  .safetyActionBox {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -543,6 +810,28 @@
     flex: 1;
     justify-content: center;
   }
+
+  .safetyHeader,
+  .alertsPanelHeader,
+  .launchAlertItem {
+    flex-direction: column;
+  }
+
+  .safetyMetricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .launchAlertActions,
+  .launchAlertActions form,
+  .alertPrimaryButton,
+  .alertSecondaryButton {
+    width: 100%;
+  }
+
+  .alertPrimaryButton,
+  .alertSecondaryButton {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 480px) {
@@ -557,6 +846,14 @@
 
   .statTrend {
     width: fit-content;
+  }
+
+  .safetyCard {
+    padding: 1rem;
+  }
+
+  .safetyMetricGrid {
+    grid-template-columns: 1fr;
   }
 
   .barRow {

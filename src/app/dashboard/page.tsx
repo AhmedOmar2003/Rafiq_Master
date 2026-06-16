@@ -1,6 +1,11 @@
 import { connection } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import styles from "./page.module.css";
+import shared from "./shared.module.css";
+import {
+  acknowledgeLaunchSafetyAlert,
+  resolveLaunchSafetyAlert,
+} from "./actions";
 import {
   Users,
   MapPin,
@@ -26,6 +31,9 @@ import {
   Navigation,
   Siren,
   Edit3,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import GrowthChart from "./GrowthChart";
@@ -68,6 +76,37 @@ type AnalyticsTodayRow = {
   kind: string;
 };
 
+type LaunchSafetyOverviewRow = {
+  launch_safety_mode: string | null;
+  auth_429_last_hour: number | null;
+  auth_events_today: number | null;
+  signup_failures_today: number | null;
+  forgot_password_failures_today: number | null;
+  dashboard_login_attempts_today: number | null;
+  dashboard_login_failures_today: number | null;
+  dashboard_auth_429_today: number | null;
+  pending_places_over_24h: number | null;
+  pending_campaigns_over_6h: number | null;
+  pending_place_edit_requests: number | null;
+  pending_campaign_edit_requests: number | null;
+  open_launch_alerts: number | null;
+  critical_launch_alerts: number | null;
+  recommended_mode: string | null;
+};
+
+type LaunchSafetyAlertRow = {
+  id: string;
+  severity: "info" | "warning" | "critical";
+  category: string;
+  title: string;
+  body: string;
+  metric_key: string | null;
+  metric_value: number | null;
+  threshold: number | null;
+  status: "open" | "acknowledged" | "resolved";
+  created_at: string;
+};
+
 function parseRange(value: string | string[] | undefined): number {
   const raw = Array.isArray(value) ? value[0] : value;
   const parsed = Number(raw);
@@ -76,6 +115,77 @@ function parseRange(value: string | string[] | undefined): number {
 
 function buildRangeHref(days: number) {
   return `/dashboard?range=${days}`;
+}
+
+function numberOrZero(value: number | null | undefined) {
+  return Number(value ?? 0);
+}
+
+function safetyStatusCopy(mode: string | null | undefined) {
+  switch (mode) {
+    case "high_pressure":
+      return {
+        label: "ضغط عالي",
+        tone: styles.safetyCritical,
+        icon: <AlertTriangle size={18} />,
+        message:
+          "في ضغط واضح على النظام. هدي الحملات مؤقتًا وراجع التنبيهات المفتوحة.",
+      };
+    case "busy":
+      return {
+        label: "مشغول",
+        tone: styles.safetyWarning,
+        icon: <Siren size={18} />,
+        message: "في طلبات محتاجة متابعة. راجع المتأخرات قبل فتح التسجيل بقوة.",
+      };
+    case "maintenance_lite":
+      return {
+        label: "تهدئة مؤقتة",
+        tone: styles.safetyWarning,
+        icon: <AlertTriangle size={18} />,
+        message: "يفضل تهدئة التسجيل أو الحملات لحد ما المؤشرات ترجع لطبيعتها.",
+      };
+    default:
+      return {
+        label: "مستقر",
+        tone: styles.safetyStable,
+        icon: <ShieldCheck size={18} />,
+        message: "النظام مستقر حاليًا. كمل متابعة التنبيهات قبل أي حملة كبيرة.",
+      };
+  }
+}
+
+function alertSeverityClass(severity: LaunchSafetyAlertRow["severity"]) {
+  switch (severity) {
+    case "critical":
+      return shared.badgeDanger;
+    case "warning":
+      return shared.badgeGold;
+    default:
+      return shared.badgePrimary;
+  }
+}
+
+function alertSeverityLabel(severity: LaunchSafetyAlertRow["severity"]) {
+  switch (severity) {
+    case "critical":
+      return "حرج";
+    case "warning":
+      return "تحذير";
+    default:
+      return "معلومة";
+  }
+}
+
+function alertStatusLabel(status: LaunchSafetyAlertRow["status"]) {
+  switch (status) {
+    case "acknowledged":
+      return "تمت المراجعة";
+    case "resolved":
+      return "تم الحل";
+    default:
+      return "مفتوح";
+  }
 }
 
 export default async function DashboardOverview({
@@ -114,6 +224,8 @@ export default async function DashboardOverview({
     { count: openReportsCount },
     { data: analyticsRollupsData },
     { data: analyticsTodayData },
+    { data: launchSafetyOverviewData },
+    { data: launchSafetyAlertsData },
   ] = await Promise.all([
     // Full paginated roster — accurate count + growth bucketing at any scale.
     listAllAuthUsers(),
@@ -183,6 +295,18 @@ export default async function DashboardOverview({
       .select("kind")
       .in("kind", ["place_open", "place_favorite", "place_map_open"])
       .gte("occurred_at", todayStartIso),
+    supabase
+      .from("launch_safety_overview")
+      .select("*")
+      .maybeSingle(),
+    supabase
+      .from("launch_safety_alerts")
+      .select(
+        "id,severity,category,title,body,metric_key,metric_value,threshold,status,created_at",
+      )
+      .in("status", ["open", "acknowledged"])
+      .order("created_at", { ascending: false })
+      .limit(5),
   ]);
 
   const usersCount = allUsers.length;
@@ -210,6 +334,14 @@ export default async function DashboardOverview({
   const placeOpenCount = analyticsCounters.place_open;
   const favoriteAddsCount = analyticsCounters.place_favorite;
   const mapOpenCount = analyticsCounters.place_map_open;
+  const launchSafetyOverview =
+    (launchSafetyOverviewData as LaunchSafetyOverviewRow | null) ?? null;
+  const launchSafetyAlerts =
+    (launchSafetyAlertsData ?? []) as LaunchSafetyAlertRow[];
+  const recommendedSafety = safetyStatusCopy(
+    launchSafetyOverview?.recommended_mode ??
+      launchSafetyOverview?.launch_safety_mode,
+  );
 
   const avgRating =
     reviews && reviews.length > 0
@@ -387,6 +519,147 @@ export default async function DashboardOverview({
           </div>
         </div>
       </div>
+
+      {/* ── Public launch safety ── */}
+      <section className={`${styles.safetyCard} ${recommendedSafety.tone}`}>
+        <div className={styles.safetyHeader}>
+          <div className={styles.safetyTitleGroup}>
+            <div className={styles.safetyIcon}>{recommendedSafety.icon}</div>
+            <div>
+              <p className={styles.safetyEyebrow}>سلامة الإطلاق العام</p>
+              <h2 className={styles.safetyTitle}>
+                {recommendedSafety.label === "مستقر"
+                  ? "النظام مستقر حاليًا"
+                  : recommendedSafety.message}
+              </h2>
+            </div>
+          </div>
+          <span className={styles.safetyStatusPill}>{recommendedSafety.label}</span>
+        </div>
+
+        <div className={styles.safetyBody}>
+          <div className={styles.safetyMetricGrid}>
+            <div className={styles.safetyMetric}>
+              <span className={styles.safetyMetricValue}>
+                {numberOrZero(launchSafetyOverview?.auth_429_last_hour)}
+              </span>
+              <span className={styles.safetyMetricLabel}>ضغط دخول آخر ساعة</span>
+            </div>
+            <div className={styles.safetyMetric}>
+              <span className={styles.safetyMetricValue}>
+                {numberOrZero(launchSafetyOverview?.signup_failures_today)}
+              </span>
+              <span className={styles.safetyMetricLabel}>مشاكل إنشاء حساب اليوم</span>
+            </div>
+            <div className={styles.safetyMetric}>
+              <span className={styles.safetyMetricValue}>
+                {numberOrZero(launchSafetyOverview?.forgot_password_failures_today)}
+              </span>
+              <span className={styles.safetyMetricLabel}>مشاكل استرجاع كلمة السر</span>
+            </div>
+            <div className={styles.safetyMetric}>
+              <span className={styles.safetyMetricValue}>
+                {numberOrZero(launchSafetyOverview?.pending_places_over_24h)}
+              </span>
+              <span className={styles.safetyMetricLabel}>أماكن متأخرة عن 24 ساعة</span>
+            </div>
+            <div className={styles.safetyMetric}>
+              <span className={styles.safetyMetricValue}>
+                {numberOrZero(launchSafetyOverview?.pending_campaigns_over_6h)}
+              </span>
+              <span className={styles.safetyMetricLabel}>إعلانات متأخرة عن 6 ساعات</span>
+            </div>
+            <div className={styles.safetyMetric}>
+              <span className={styles.safetyMetricValue}>
+                {numberOrZero(launchSafetyOverview?.open_launch_alerts)}
+              </span>
+              <span className={styles.safetyMetricLabel}>تنبيهات مفتوحة</span>
+            </div>
+          </div>
+
+          <div className={styles.safetyActionBox}>
+            <CheckCircle2 size={18} />
+            <div>
+              <strong>الإجراء المقترح</strong>
+              <p>
+                {numberOrZero(launchSafetyOverview?.critical_launch_alerts) > 0
+                  ? "ابدأ بالتنبيهات الحرجة قبل أي حملة أو فتح التسجيل للجميع."
+                  : numberOrZero(launchSafetyOverview?.pending_places_over_24h) > 0 ||
+                      numberOrZero(launchSafetyOverview?.pending_campaigns_over_6h) > 0
+                    ? "راجع طلبات المراجعة المتأخرة عشان التجربة تفضل سلسة."
+                    : "راجع إعدادات الإيميل وTurnstile قبل فتح التسجيل العام."}
+              </p>
+              <span>آخر قراءة: {format(new Date(), "HH:mm، d MMM")}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.alertsPanel}>
+          <div className={styles.alertsPanelHeader}>
+            <div>
+              <h3>تنبيهات الإطلاق</h3>
+              <p>أهم الحاجات اللي محتاجة عينك بدون الدخول في تفاصيل تقنية.</p>
+            </div>
+            <span className={styles.cardBadge}>
+              {launchSafetyAlerts.length > 0
+                ? `${launchSafetyAlerts.length} ظاهر`
+                : "لا يوجد"}
+            </span>
+          </div>
+
+          {launchSafetyAlerts.length === 0 ? (
+            <div className={styles.launchAlertEmpty}>
+              <ShieldCheck size={18} />
+              <span>مفيش تنبيهات مفتوحة دلوقتي. الوضع هادي.</span>
+            </div>
+          ) : (
+            <div className={styles.launchAlertsList}>
+              {launchSafetyAlerts.map((alert) => (
+                <article key={alert.id} className={styles.launchAlertItem}>
+                  <div className={styles.launchAlertMain}>
+                    <div className={styles.launchAlertBadges}>
+                      <span
+                        className={`${shared.badge} ${alertSeverityClass(
+                          alert.severity,
+                        )}`}
+                      >
+                        {alertSeverityLabel(alert.severity)}
+                      </span>
+                      <span className={`${shared.badge} ${shared.badgeGray}`}>
+                        {alertStatusLabel(alert.status)}
+                      </span>
+                    </div>
+                    <h4>{alert.title}</h4>
+                    <p>{alert.body}</p>
+                    <span className={styles.launchAlertMeta}>
+                      {alert.category} · {format(new Date(alert.created_at), "HH:mm، d MMM")}
+                      {alert.metric_key
+                        ? ` · ${alert.metric_key}: ${alert.metric_value ?? 0}`
+                        : ""}
+                    </span>
+                  </div>
+                  <div className={styles.launchAlertActions}>
+                    {alert.status === "open" ? (
+                      <form action={acknowledgeLaunchSafetyAlert}>
+                        <input type="hidden" name="id" value={alert.id} />
+                        <button className={styles.alertSecondaryButton} type="submit">
+                          راجعت
+                        </button>
+                      </form>
+                    ) : null}
+                    <form action={resolveLaunchSafetyAlert}>
+                      <input type="hidden" name="id" value={alert.id} />
+                      <button className={styles.alertPrimaryButton} type="submit">
+                        اتحلت
+                      </button>
+                    </form>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* ── KPI Stats Row ── */}
       <div className={styles.statsGrid}>
