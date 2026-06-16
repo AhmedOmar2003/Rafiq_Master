@@ -8,6 +8,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const LOGIN_EMAIL_LIMIT = 5;
 const LOGIN_IP_LIMIT = 15;
 const LOGIN_WINDOW = "15 minutes";
+const ADMIN_RATE_LIMIT_MESSAGE =
+  "تم إيقاف محاولات الدخول مؤقتًا للحماية. حاول مرة أخرى بعد قليل.";
 
 type RateLimitResult = {
   data: boolean | null;
@@ -46,6 +48,28 @@ type AdminSupabaseLike = {
     };
   };
 };
+
+type AuthErrorLike = {
+  status?: number;
+  statusCode?: number;
+  code?: string;
+  message?: string;
+};
+
+function isSupabaseRateLimited(error: AuthErrorLike | null): boolean {
+  if (!error) return false;
+
+  const message = (error.message ?? "").toLowerCase();
+  const code = (error.code ?? "").toLowerCase();
+  return (
+    error.status === 429 ||
+    error.statusCode === 429 ||
+    code.includes("rate") ||
+    message.includes("429") ||
+    message.includes("too many") ||
+    message.includes("rate limit")
+  );
+}
 
 async function logLoginAttempt(params: {
   email: string;
@@ -104,7 +128,7 @@ export async function login(formData: FormData) {
       succeeded: false,
       reason: "rate_limited",
     });
-    return { error: "محاولات الدخول كثيرة جدًا. حاول مرة أخرى لاحقًا." };
+    return { error: ADMIN_RATE_LIMIT_MESSAGE };
   }
 
   const supabase = await createClient();
@@ -115,6 +139,17 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
+    if (isSupabaseRateLimited(error)) {
+      await logLoginAttempt({
+        email: emailKey,
+        ip,
+        userAgent,
+        succeeded: false,
+        reason: "supabase_rate_limited",
+      });
+      return { error: ADMIN_RATE_LIMIT_MESSAGE };
+    }
+
     await logLoginAttempt({
       email: emailKey,
       ip,

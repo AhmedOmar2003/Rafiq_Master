@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, type FormEvent } from "react";
 import { login } from "./actions";
 import styles from "./page.module.css";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +16,10 @@ export default function LoginPage() {
     null,
   );
 
+  function preventDuplicateSubmit(event: FormEvent<HTMLFormElement>) {
+    if (isPending) event.preventDefault();
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -24,31 +28,41 @@ export default function LoginPage() {
 
         {state?.error && <div className={styles.error}>{state.error}</div>}
 
-        <form action={formAction} className={styles.form}>
-          <Input
-            label="البريد الإلكتروني"
-            type="email"
-            id="email"
-            name="email"
-            required
-            placeholder="name@example.com"
-            dir="ltr"
-          />
+        <form
+          action={formAction}
+          className={styles.form}
+          onSubmit={preventDuplicateSubmit}
+        >
+          <fieldset
+            className={styles.fieldset}
+            disabled={isPending}
+            aria-busy={isPending}
+          >
+            <Input
+              label="البريد الإلكتروني"
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="name@example.com"
+              dir="ltr"
+            />
 
-          <Input
-            label="كلمة المرور"
-            type="password"
-            id="password"
-            name="password"
-            required
-            placeholder="مثال: Ahmed11#"
-            autoComplete="current-password"
-            dir="ltr"
-          />
+            <Input
+              label="كلمة المرور"
+              type="password"
+              id="password"
+              name="password"
+              required
+              placeholder="مثال: Ahmed11#"
+              autoComplete="current-password"
+              dir="ltr"
+            />
 
-          <Button type="submit" fullWidth isLoading={isPending}>
-            {isPending ? "جاري الدخول..." : "دخول"}
-          </Button>
+            <Button type="submit" fullWidth isLoading={isPending}>
+              {isPending ? "جاري الدخول..." : "دخول"}
+            </Button>
+          </fieldset>
         </form>
       </div>
     </div>

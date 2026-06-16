@@ -36,6 +36,15 @@
   gap: var(--space-md);
 }
 
+.fieldset {
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin: 0;
+  padding: 0;
+}
+
 .error {
   color: var(--color-error);
   background-color: var(--color-error-bg);
