@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, type FormEvent } from "react";
+import Link from "next/link";
 import { login } from "./actions";
 import styles from "./page.module.css";
 import { Button } from "@/components/ui/Button";
@@ -68,6 +69,12 @@ export default function LoginPage() {
             <Button type="submit" fullWidth isLoading={isPending}>
               {isPending ? "جاري الدخول..." : "دخول"}
             </Button>
+
+            <div className={styles.footerRow}>
+              <Link href="/login/forgot-password" className={styles.forgotLink}>
+                نسيت كلمة السر؟
+              </Link>
+            </div>
           </fieldset>
         </form>
       </div>

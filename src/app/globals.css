@@ -1,5 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap");
+
 :root {
   /* "على فين؟" design tokens. UI code should use semantic roles below. */
+  --font-cairo: "Cairo";
   --brand-primary: #0F5D7A;
   --brand-secondary: #1FA5A3;
   --brand-accent: #D9A441;

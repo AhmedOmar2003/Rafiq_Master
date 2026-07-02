@@ -22,8 +22,8 @@
 
 .logo {
   display: block;
-  width: 150px;
-  height: 96px;
+  width: min(240px, 62vw);
+  height: 136px;
   object-fit: contain;
   margin: 0 auto var(--space-md);
 }
@@ -64,4 +64,33 @@
   font-size: 0.9rem;
   text-align: right;
   margin-bottom: var(--space-md);
+}
+
+.success {
+  color: var(--color-success);
+  background-color: rgba(78, 139, 87, 0.12);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  text-align: right;
+  margin-bottom: var(--space-md);
+}
+
+.footerRow {
+  display: flex;
+  justify-content: center;
+  margin-top: calc(var(--space-2xs) * -1);
+}
+
+.forgotLink {
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.forgotLink:hover,
+.forgotLink:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
