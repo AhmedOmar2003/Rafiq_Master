@@ -39,8 +39,8 @@
 }
 
 .input:focus:not(:disabled):not(.error) {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary);
+  border-color: var(--color-border-focus);
+  box-shadow: var(--focus-ring);
 }
 
 .input.error {

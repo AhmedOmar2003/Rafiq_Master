@@ -94,7 +94,7 @@ export default function AddUserButton() {
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 10,
-                background: "rgba(104,31,0,0.10)",
+                background: "var(--color-primary-alpha)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <Plus size={22} style={{ color: "var(--color-primary)" }} />
@@ -203,7 +203,7 @@ export default function AddUserButton() {
             {error && (
               <div style={{
                 marginTop: "0.85rem", padding: "0.7rem 0.85rem",
-                background: "rgba(220,38,38,0.10)", color: "#dc2626",
+                background: "var(--color-error-bg)", color: "var(--color-error)",
                 borderRadius: "var(--radius-md)", fontSize: "0.85rem",
               }}>
                 ❌ {error}
@@ -212,7 +212,7 @@ export default function AddUserButton() {
             {success && (
               <div style={{
                 marginTop: "0.85rem", padding: "0.7rem 0.85rem",
-                background: "rgba(16,185,129,0.10)", color: "#10b981",
+                background: "var(--color-success-bg)", color: "var(--color-success)",
                 borderRadius: "var(--radius-md)", fontSize: "0.85rem",
               }}>
                 ✅ تم إنشاء الحساب بنجاح

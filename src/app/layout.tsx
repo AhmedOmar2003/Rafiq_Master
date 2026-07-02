@@ -10,8 +10,8 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard - Rafiq",
-  description: "رفيق Admin Dashboard",
+  title: "لوحة تحكم على فين؟",
+  description: "إدارة تطبيق على فين؟",
 };
 
 export default function RootLayout({

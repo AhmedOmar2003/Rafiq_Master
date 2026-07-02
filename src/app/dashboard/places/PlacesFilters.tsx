@@ -93,11 +93,11 @@ const RATING_OPTIONS = [
 ];
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  طعام: "#f59e0b",
-  ترفيه: "#8b5cf6",
-  سياحي: "#10b981",
+  طعام: "#D9A441",
+  ترفيه: "#1FA5A3",
+  سياحي: "#4E8B57",
   رياضة: "#3b82f6",
-  فاجئني: "#ec4899",
+  فاجئني: "#B85C38",
 };
 
 export default function PlacesFilters({
@@ -435,7 +435,7 @@ export default function PlacesFilters({
               </tr>
             ) : (
               filtered.map((place) => {
-                const color = ACTIVITY_COLORS[place.activity_name] || "#681F00";
+                const color = ACTIVITY_COLORS[place.activity_name] || "#0F5D7A";
                 const addedByAdmin = !place.provider_id;
                 return (
                   <tr key={place.id}>
@@ -498,8 +498,8 @@ export default function PlacesFilters({
                           <Star
                             key={i}
                             size={14}
-                            fill={i <= place.rating ? "#f59e0b" : "transparent"}
-                            stroke={i <= place.rating ? "#f59e0b" : "#d1d5db"}
+                            fill={i <= place.rating ? "#D9A441" : "transparent"}
+                            stroke={i <= place.rating ? "#D9A441" : "#D9E1E5"}
                           />
                         ))}
                         <span style={{ fontSize: "0.78rem", color: "var(--color-gray)", fontWeight: 700 }}>
@@ -711,7 +711,7 @@ export default function PlacesFilters({
                 background: "rgba(220,38,38,0.10)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <XCircle size={22} color="#dc2626" />
+                <XCircle size={22} color="var(--color-error)" />
               </div>
               <div>
                 <h3 style={{ margin: 0, fontWeight: 800, fontSize: "1.05rem" }}>
@@ -735,10 +735,10 @@ export default function PlacesFilters({
             {/* Reason input */}
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <label style={{ fontWeight: 700, fontSize: "0.88rem" }}>
-                سبب الرفض <span style={{ color: "#dc2626" }}>*</span>
+                سبب الرفض <span style={{ color: "var(--color-error)" }}>*</span>
               </label>
               <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--color-gray)" }}>
-                سيظهر هذا السبب للمزوّد مباشرةً في تطبيق رفيق عبر الـ Realtime.
+                سيظهر هذا السبب للمزوّد مباشرةً في تطبيق على فين؟ عبر الـ Realtime.
               </p>
               <textarea
                 rows={4}
@@ -757,7 +757,7 @@ export default function PlacesFilters({
                   boxSizing: "border-box",
                 }}
                 onFocus={(e) =>
-                  (e.target.style.borderColor = "var(--color-primary, #681F00)")
+                  (e.target.style.borderColor = "var(--color-primary, #0F5D7A)")
                 }
                 onBlur={(e) =>
                   (e.target.style.borderColor = "var(--color-border, #e5e7eb)")
@@ -787,7 +787,7 @@ export default function PlacesFilters({
                   marginTop: "2px",
                   width: 18,
                   height: 18,
-                  accentColor: "#10b981",
+                  accentColor: "#4E8B57",
                   cursor: "pointer",
                 }}
               />
@@ -832,7 +832,7 @@ export default function PlacesFilters({
                 }}
                 style={{
                   flex: 1, padding: "0.75rem",
-                  background: rejectReason.trim() && !isPending ? "#dc2626" : "#fca5a5",
+                  background: rejectReason.trim() && !isPending ? "#B85C38" : "#D9E1E5",
                   border: "none",
                   borderRadius: "var(--radius-md, 10px)",
                   color: "#fff", cursor: rejectReason.trim() && !isPending ? "pointer" : "not-allowed",
@@ -1292,25 +1292,25 @@ function StatusBadge({ status }: { status: string }) {
     pending: {
       label: "قيد المراجعة",
       bg: "rgba(217,119,6,0.12)",
-      fg: "#d97706",
+      fg: "#7A5400",
       icon: Hourglass,
     },
     under_review: {
       label: "تحت المراجعة",
       bg: "rgba(59,130,246,0.12)",
-      fg: "#2563eb",
+      fg: "#0F5D7A",
       icon: Hourglass,
     },
     approved: {
       label: "معتمد",
       bg: "rgba(16,185,129,0.12)",
-      fg: "#10b981",
+      fg: "#4E8B57",
       icon: CheckCircle2,
     },
     rejected: {
       label: "مرفوض",
       bg: "rgba(220,38,38,0.12)",
-      fg: "#dc2626",
+      fg: "#B85C38",
       icon: XCircle,
     },
     suspended: {
@@ -1370,8 +1370,8 @@ function OwnerCell({
           gap: 6,
           padding: "0.32rem 0.65rem",
           borderRadius: "var(--radius-sm)",
-          background: "rgba(104,31,0,0.10)",
-          color: "#681F00",
+          background: "rgba(15,93,122,0.12)",
+          color: "#0F5D7A",
           fontSize: "0.78rem",
           fontWeight: 700,
         }}
@@ -1400,8 +1400,8 @@ function OwnerCell({
           width: 32,
           height: 32,
           borderRadius: "var(--radius-sm)",
-          background: "rgba(104,31,0,0.08)",
-          color: "#681F00",
+          background: "rgba(31,165,163,0.10)",
+          color: "#0F5D7A",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -1502,7 +1502,7 @@ function EditAllowedToggle({
         background: allowed
           ? "rgba(16,185,129,0.12)"
           : "var(--color-background, #f3f4f6)",
-        color: allowed ? "#10b981" : "var(--color-text-tertiary, #6b7280)",
+        color: allowed ? "#4E8B57" : "var(--color-text-tertiary)",
         border: `1px solid ${allowed ? "rgba(16,185,129,0.3)" : "var(--color-border, #e5e7eb)"}`,
         borderRadius: 999,
         cursor: busy ? "wait" : "pointer",

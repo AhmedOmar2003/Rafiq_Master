@@ -4,7 +4,7 @@ import s from "../shared.module.css";
 import AppealsList, { type AppealRow } from "./AppealsList";
 import { setAppealStatus } from "./actions";
 
-export const metadata = { title: "الطعون - رفيق" };
+export const metadata = { title: "الطعون - على فين؟" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

@@ -78,7 +78,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background:
-    radial-gradient(circle at top left, rgba(104, 31, 0, 0.10), transparent 34%),
+    radial-gradient(circle at top left, rgba(31, 165, 163, 0.12), transparent 34%),
     var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
@@ -344,6 +344,8 @@
   align-items: center;
   gap: 1rem;
   box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
 }
@@ -353,10 +355,10 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
-.statCardPrimary { background: linear-gradient(135deg, #681F00 0%, #8E3006 100%); color: #fff; }
-.statCardGold    { background: linear-gradient(135deg, #b45309 0%, #d97706 100%); color: #fff; }
-.statCardGreen   { background: linear-gradient(135deg, #047857 0%, #10b981 100%); color: #fff; }
-.statCardPurple  { background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%); color: #fff; }
+.statCardPrimary { border-top: 4px solid var(--color-brand-primary); }
+.statCardGold    { border-top: 4px solid var(--color-brand-accent); }
+.statCardGreen   { border-top: 4px solid var(--color-brand-green); }
+.statCardPurple  { border-top: 4px solid var(--color-brand-secondary); }
 
 .statCardBg {
   position: absolute;
@@ -369,7 +371,8 @@
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -387,12 +390,12 @@
   font-size: 1.75rem;
   font-weight: 800;
   line-height: 1;
-  color: #fff;
+  color: var(--color-primary);
 }
 
 .statLabel {
   font-size: 0.86rem;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-secondary);
   font-weight: 600;
 }
 
@@ -400,7 +403,8 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  background: rgba(255,255,255,0.18);
+  background: var(--color-bg-surface-soft);
+  color: var(--color-text-secondary);
   border-radius: var(--radius-pill);
   padding: 0.3rem 0.7rem;
   font-size: 0.75rem;
@@ -528,7 +532,7 @@
 }
 
 .ratingPill {
-  background: linear-gradient(135deg, #681F00, #8E3006);
+  background: var(--color-brand-primary);
   color: #fff;
   font-size: 0.8rem;
   font-weight: 700;
@@ -571,7 +575,7 @@
 
 .barFill {
   height: 100%;
-  background: linear-gradient(90deg, #681F00, #d97706);
+  background: linear-gradient(90deg, var(--color-brand-primary), var(--color-brand-secondary));
   border-radius: var(--radius-pill);
   transition: width 0.6s ease;
 }

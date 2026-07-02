@@ -13,7 +13,7 @@ import {
   updateSupportProfile,
 } from "./actions";
 
-export const metadata = { title: "الإعدادات - رفيق" };
+export const metadata = { title: "الإعدادات - على فين؟" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -115,14 +115,14 @@ export default async function SettingsPage() {
             </div>
             <div>
               <h2 className={ls.cardTitle}>معلومات التطبيق</h2>
-              <p className={ls.cardSub}>بيانات إصدار رفيق وقاعدة البيانات</p>
+              <p className={ls.cardSub}>بيانات إصدار على فين؟ وقاعدة البيانات</p>
             </div>
           </div>
           <div className={ls.infoGrid}>
             <div className={ls.infoRow}>
               <span className={ls.infoLabel}>اسم التطبيق</span>
               <span className={ls.infoVal}>
-                {stringValue(supportProfile, "app_name_ar", "رفيق")} — {stringValue(supportProfile, "app_name_en", "Rafiq App")}
+                {stringValue(supportProfile, "app_name_ar", "على فين؟")} — {stringValue(supportProfile, "app_name_en", "Ala Fein?")}
               </span>
             </div>
             <div className={ls.infoRow}>
@@ -334,7 +334,7 @@ export default async function SettingsPage() {
                 <input
                   className={ls.input}
                   name="app_name_ar"
-                  defaultValue={stringValue(supportProfile, "app_name_ar", "رفيق")}
+                  defaultValue={stringValue(supportProfile, "app_name_ar", "على فين؟")}
                 />
               </label>
               <label className={ls.fieldBlock}>
@@ -342,7 +342,7 @@ export default async function SettingsPage() {
                 <input
                   className={ls.input}
                   name="app_name_en"
-                  defaultValue={stringValue(supportProfile, "app_name_en", "Rafiq App")}
+                  defaultValue={stringValue(supportProfile, "app_name_en", "Ala Fein?")}
                 />
               </label>
             </div>

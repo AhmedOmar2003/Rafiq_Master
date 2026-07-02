@@ -40,7 +40,7 @@
   height: 56px;
   border-radius: 50%;
   background: rgba(220, 38, 38, 0.12);
-  color: #dc2626;
+  color: var(--color-error);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,7 +80,7 @@
 
 .cancelBtn:focus-visible,
 .confirmBtn:focus-visible {
-  outline: 3px solid rgba(104, 31, 0, 0.22);
+  outline: 3px solid rgba(31, 165, 163, 0.35);
   outline-offset: 2px;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .confirmBtn {
-  background: #dc2626;
+  background: var(--color-error);
   color: #fff;
 }
 

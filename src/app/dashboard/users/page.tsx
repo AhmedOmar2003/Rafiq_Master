@@ -7,7 +7,7 @@ import { requireSuperAdmin } from "@/lib/auth/role";
 import { listAllAuthUsers } from "@/lib/admin/users";
 import { deleteUser } from "./actions";
 
-export const metadata = { title: "إدارة المستخدمين - رفيق" };
+export const metadata = { title: "إدارة المستخدمين - على فين؟" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

@@ -5,7 +5,7 @@ import ProvidersFilters, { type ProviderRow } from "./ProvidersFilters";
 import { currentAdminRole } from "@/lib/auth/role";
 import { deleteUser } from "../users/actions";
 
-export const metadata = { title: "مقدّمو الخدمة - رفيق" };
+export const metadata = { title: "مقدّمو الخدمة - على فين؟" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

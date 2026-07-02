@@ -15,7 +15,7 @@ import {
 import { getProfileDirectory } from "@/lib/admin/users";
 import { currentAdminRole } from "@/lib/auth/role";
 
-export const metadata = { title: "إدارة الأماكن - رفيق" };
+export const metadata = { title: "إدارة الأماكن - على فين؟" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

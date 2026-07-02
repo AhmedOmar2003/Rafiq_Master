@@ -10,7 +10,7 @@ import {
   rejectCampaignEditRequest,
 } from "./actions";
 
-export const metadata = { title: "إدارة الإعلانات - رفيق" };
+export const metadata = { title: "إدارة الإعلانات - على فين؟" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

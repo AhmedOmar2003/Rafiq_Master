@@ -4,7 +4,7 @@ import s from "../shared.module.css";
 import ReviewsFilters from "./ReviewsFilters";
 import { deleteReview } from "./actions";
 
-export const metadata = { title: "إدارة التقييمات - رفيق" };
+export const metadata = { title: "إدارة التقييمات - على فين؟" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

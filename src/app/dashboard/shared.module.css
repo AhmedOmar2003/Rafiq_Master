@@ -74,19 +74,19 @@
   gap: 0.5rem;
   min-height: 48px;
   padding: 0.8rem 1.4rem;
-  background: linear-gradient(135deg, #681F00, #8E3006);
+  background: var(--color-brand-primary);
   color: #fff;
   border-radius: var(--radius-md);
   font-weight: 700;
   font-size: 0.9rem;
   white-space: nowrap;
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 14px rgba(104, 31, 0, 0.25);
+  box-shadow: var(--shadow-sm);
 }
 
 .primaryBtn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(104, 31, 0, 0.35);
+  box-shadow: var(--shadow-md);
   color: #fff;
 }
 
@@ -112,7 +112,7 @@
 .statCard:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-  border-color: rgba(104, 31, 0, 0.08);
+  border-color: var(--color-primary-alpha);
 }
 
 .statIcon {
@@ -483,8 +483,8 @@
 .badgeDanger  { background: var(--color-danger-alpha);  color: var(--color-danger);  }
 .badgePrimary { background: var(--color-primary-alpha); color: var(--color-primary); }
 .badgeGray    { background: var(--color-gray-lighter);  color: var(--color-text-secondary, #374151); }
-.badgeGold    { background: rgba(217,119,6,0.16); color: #92400e; }
-.badgePurple  { background: rgba(139,92,246,0.16); color: #6d28d9; }
+.badgeGold    { background: var(--color-accent-alpha); color: var(--color-state-warning); }
+.badgePurple  { background: var(--color-secondary-alpha); color: var(--color-primary); }
 
 /* ── Stars ──────────────────────────────────────────── */
 .starsRow {
@@ -493,8 +493,8 @@
   gap: 0.15rem;
 }
 
-.starFilled { color: #f59e0b; }
-.starEmpty  { color: #b6b0a9; }
+.starFilled { color: var(--color-brand-accent); }
+.starEmpty  { color: var(--color-border-hover); }
 
 /* ── Row Info Cell ──────────────────────────────────── */
 .infoCell {
@@ -557,12 +557,12 @@
   color: var(--color-danger);
 }
 
-.actionBtnApprove { background: rgba(16,185,129,0.12); color: #10b981; }
-.actionBtnApprove:hover { background: rgba(16,185,129,0.22); }
-.actionBtnReject  { background: rgba(220,38,38,0.12);  color: #dc2626; }
-.actionBtnReject:hover  { background: rgba(220,38,38,0.22);  }
-.actionBtnPending { background: rgba(217,119,6,0.12);  color: #d97706; }
-.actionBtnPending:hover { background: rgba(217,119,6,0.22);  }
+.actionBtnApprove { background: var(--color-success-bg); color: var(--color-success); }
+.actionBtnApprove:hover { background: rgba(78,139,87,0.22); }
+.actionBtnReject  { background: var(--color-error-bg); color: var(--color-error); }
+.actionBtnReject:hover  { background: rgba(184,92,56,0.22); }
+.actionBtnPending { background: var(--color-warning-bg); color: var(--color-warning); }
+.actionBtnPending:hover { background: rgba(217,164,65,0.28); }
 
 /* ── Empty State ────────────────────────────────────── */
 .emptyState {
@@ -619,8 +619,8 @@ button:focus-visible,
 .statIconSuccess { background: var(--color-success-alpha); color: var(--color-success); }
 .statIconWarning { background: rgba(217,119,6,0.12);       color: var(--color-warning);  }
 .statIconDanger  { background: var(--color-danger-alpha);  color: var(--color-danger);   }
-.statIconInfo    { background: rgba(59,130,246,0.12);      color: #2563eb;               }
-.statIconPurple  { background: rgba(139,92,246,0.12);      color: #7c3aed;               }
+.statIconInfo    { background: var(--color-info-bg); color: var(--color-info); }
+.statIconPurple  { background: var(--color-secondary-alpha); color: var(--color-secondary); }
 .statIconTeal    { background: rgba(20,184,166,0.12);      color: #0d9488;               }
 
 /* ── Admin Review Action UI ─────────────────────────────── */
@@ -663,7 +663,7 @@ button:focus-visible,
 }
 
 .secondaryBtn:focus-visible {
-  outline: 3px solid rgba(104, 31, 0, 0.22);
+  outline: 3px solid rgba(31, 165, 163, 0.35);
   outline-offset: 2px;
 }
 
@@ -704,12 +704,12 @@ button:focus-visible,
 .reviewTextarea::placeholder { color: var(--color-gray); }
 
 /* ── Avatar Color Variants ──────────────────────────── */
-.avatarPrimary { background: rgba(104,31,0,0.10); color: #681F00; }
+.avatarPrimary { background: var(--color-primary-alpha); color: var(--color-primary); }
 
 /* ── Inline Cell Helpers ────────────────────────────── */
 .inlineFlexRow     { display: inline-flex; align-items: center; gap: 6px; }
 .inlineFlexRowBold { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
-.cancelWarning     { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--color-warning, #d97706); margin-top: 4px; }
+.cancelWarning     { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--color-warning); margin-top: 4px; }
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 768px) {

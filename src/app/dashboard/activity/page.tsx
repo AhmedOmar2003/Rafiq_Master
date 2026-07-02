@@ -8,7 +8,7 @@ import {
 import s from "../shared.module.css";
 import ActivityFeed, { type ActivityRow } from "./ActivityFeed";
 
-export const metadata = { title: "النشاط - رفيق" };
+export const metadata = { title: "النشاط - على فين؟" };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -664,7 +664,7 @@ export default async function ActivityPage({
           <div className={s.pageBreadcrumb}>
             لوحة التحكم <span>/</span> النشاط
           </div>
-          <h1 className={s.pageTitle}>كل اللي بيحصل في رفيق</h1>
+          <h1 className={s.pageTitle}>كل اللي بيحصل في على فين؟</h1>
           <p className={s.pageSubtitle}>
             هنا هتشوف نشاط المستخدمين، المزوّدين، وتعديلات الأدمن في مكان واحد.
           </p>
@@ -681,8 +681,10 @@ export default async function ActivityPage({
                     textDecoration: "none",
                     fontWeight: 800,
                     fontSize: "0.82rem",
-                    background: active ? "#681F00" : "rgba(104,31,0,0.08)",
-                    color: active ? "#fff" : "#681F00",
+                    background: active
+                      ? "var(--color-brand-primary)"
+                      : "var(--color-primary-alpha)",
+                    color: active ? "#fff" : "var(--color-brand-primary)",
                   }}
                 >
                   {days === 1 ? "آخر 24 ساعة" : `آخر ${days} يوم`}
@@ -694,17 +696,17 @@ export default async function ActivityPage({
       </div>
 
       <div className={s.statsRow}>
-        <Kpi icon={<Activity size={22} />} value={periodEvents.length} label={rangeDays === 1 ? "نشاط آخر ٢٤ ساعة" : `نشاط آخر ${rangeDays} يوم`} tone="#681F00" />
-        <Kpi icon={<UserPlus size={22} />} value={periodEvents.filter((e) => e.kind === "signup").length} label="تسجيلات جديدة" tone="#2563eb" />
-        <Kpi icon={<CreditCard size={22} />} value={periodEvents.filter((e) => e.kind === "subscription").length} label="اشتراكات جديدة" tone="#10b981" />
-        <Kpi icon={<CheckCircle2 size={22} />} value={periodEvents.filter((e) => e.kind === "approve").length} label="عمليات اعتماد" tone="#16a34a" />
-        <Kpi icon={<XCircle size={22} />} value={periodEvents.filter((e) => e.kind === "reject").length} label="عمليات رفض" tone="#dc2626" />
-        <Kpi icon={<Gavel size={22} />} value={periodEvents.filter((e) => e.kind === "appeal").length} label="طعون جديدة" tone="#d97706" />
-        <Kpi icon={<Star size={22} />} value={periodEvents.filter((e) => e.kind === "review").length} label="تقييمات جديدة" tone="#f59e0b" />
-        <Kpi icon={<Siren size={22} />} value={periodEvents.filter((e) => e.kind === "report").length} label="بلاغات جديدة" tone="#dc2626" />
-        <Kpi icon={<Megaphone size={22} />} value={periodEvents.filter((e) => e.kind === "campaign").length} label="حملات أو طلبات إعلان" tone="#681F00" />
-        <Kpi icon={<Heart size={22} />} value={periodEvents.filter((e) => e.kind === "favorite").length} label="تفاعلات المفضلة" tone="#db2777" />
-        <Kpi icon={<Navigation size={22} />} value={periodEvents.filter((e) => e.kind === "map_open").length} label="فتح الخريطة" tone="#0284c7" />
+        <Kpi icon={<Activity size={22} />} value={periodEvents.length} label={rangeDays === 1 ? "نشاط آخر ٢٤ ساعة" : `نشاط آخر ${rangeDays} يوم`} tone="#0F5D7A" />
+        <Kpi icon={<UserPlus size={22} />} value={periodEvents.filter((e) => e.kind === "signup").length} label="تسجيلات جديدة" tone="#0F5D7A" />
+        <Kpi icon={<CreditCard size={22} />} value={periodEvents.filter((e) => e.kind === "subscription").length} label="اشتراكات جديدة" tone="#4E8B57" />
+        <Kpi icon={<CheckCircle2 size={22} />} value={periodEvents.filter((e) => e.kind === "approve").length} label="عمليات اعتماد" tone="#4E8B57" />
+        <Kpi icon={<XCircle size={22} />} value={periodEvents.filter((e) => e.kind === "reject").length} label="عمليات رفض" tone="#B85C38" />
+        <Kpi icon={<Gavel size={22} />} value={periodEvents.filter((e) => e.kind === "appeal").length} label="طعون جديدة" tone="#D9A441" />
+        <Kpi icon={<Star size={22} />} value={periodEvents.filter((e) => e.kind === "review").length} label="تقييمات جديدة" tone="#D9A441" />
+        <Kpi icon={<Siren size={22} />} value={periodEvents.filter((e) => e.kind === "report").length} label="بلاغات جديدة" tone="#B85C38" />
+        <Kpi icon={<Megaphone size={22} />} value={periodEvents.filter((e) => e.kind === "campaign").length} label="حملات أو طلبات إعلان" tone="#1FA5A3" />
+        <Kpi icon={<Heart size={22} />} value={periodEvents.filter((e) => e.kind === "favorite").length} label="تفاعلات المفضلة" tone="#B85C38" />
+        <Kpi icon={<Navigation size={22} />} value={periodEvents.filter((e) => e.kind === "map_open").length} label="فتح الخريطة" tone="#1FA5A3" />
         <Kpi icon={<MousePointerClick size={22} />} value={periodEvents.filter((e) => e.kind === "campaign_click").length} label="نقرات الإعلانات" tone="#9333ea" />
         <Kpi icon={<Activity size={22} />} value={periodEvents.filter((e) => e.kind === "admin_action").length} label="إجراءات الأدمن" tone="#4b5563" />
       </div>

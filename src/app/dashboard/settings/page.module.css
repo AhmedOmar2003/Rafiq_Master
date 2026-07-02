@@ -73,7 +73,7 @@
   outline: none;
   border-color: var(--color-primary);
   background: var(--color-white);
-  box-shadow: 0 0 0 4px rgba(104,31,0,0.08);
+  box-shadow: var(--focus-ring);
 }
 
 .saveBtn {
@@ -109,11 +109,11 @@
 .cardIconPrimary { background: var(--color-primary-alpha); color: var(--color-primary); }
 .cardIconSuccess { background: var(--color-success-alpha); color: var(--color-success); }
 .cardIconWarning { background: rgba(217,119,6,0.10);       color: var(--color-warning); }
-.cardIconInfo    { background: rgba(2,132,199,0.10);       color: #0284c7; }
+.cardIconInfo    { background: var(--color-info-bg); color: var(--color-info); }
 .cardIconIndigo  { background: rgba(99,102,241,0.10);      color: #6366f1; }
 
 /* dbStatIcon color variants */
-.dbStatIconPrimary { background: rgba(104,31,0,0.08);  color: var(--color-primary); }
+.dbStatIconPrimary { background: var(--color-primary-alpha); color: var(--color-primary); }
 .dbStatIconWarning { background: rgba(245,158,11,0.08); color: var(--color-warning); }
 .dbStatIconIndigo  { background: rgba(99,102,241,0.08); color: #6366f1; }
 
@@ -216,7 +216,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #681F00, #8E3006);
+  background: var(--color-brand-primary);
   color: #fff;
   display: flex;
   align-items: center;
@@ -224,7 +224,7 @@
   font-size: 1.3rem;
   font-weight: 800;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(104,31,0,0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .profileName {
@@ -376,22 +376,22 @@
   align-items: flex-start;
   gap: 1.25rem;
   padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, rgba(104,31,0,0.06), rgba(142,48,6,0.03));
+  background: linear-gradient(135deg, rgba(15,93,122,0.08), rgba(31,165,163,0.04));
   border-radius: var(--radius-md);
-  border: 1px solid rgba(104,31,0,0.10);
+  border: 1px solid var(--color-primary-alpha);
 }
 
 .aboutLogo {
   width: 52px;
   height: 52px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #681F00, #8E3006);
+  background: var(--color-brand-primary);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 6px 16px rgba(104,31,0,0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .aboutTitle {

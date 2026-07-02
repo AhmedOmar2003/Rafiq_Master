@@ -25,8 +25,8 @@ const ROLE_OPTIONS = [
 ];
 
 const AVATAR_COLORS = [
-  "#681F00", "#8b5cf6", "#10b981", "#f59e0b", "#3b82f6",
-  "#ec4899", "#6366f1", "#14b8a6",
+  "#0F5D7A", "#1FA5A3", "#D9A441", "#4E8B57", "#B85C38",
+  "#B85C38", "#0F5D7A", "#1FA5A3",
 ];
 
 export default function UsersFilters({
@@ -268,7 +268,7 @@ export default function UsersFilters({
                           triggerClassName={s.clearAllBtn}
                           triggerStyle={{
                             borderColor: "rgba(220,38,38,0.24)",
-                            color: "#dc2626",
+                            color: "var(--color-error)",
                           }}
                         >
                           <Trash2 size={13} />

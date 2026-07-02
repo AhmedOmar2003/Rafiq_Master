@@ -5,7 +5,7 @@ import ReportsList, { type ReportRow } from "./ReportsList";
 import { setReportStatus } from "./actions";
 import { getProfileDirectory, listAllAuthUsers } from "@/lib/admin/users";
 
-export const metadata = { title: "البلاغات - رفيق" };
+export const metadata = { title: "البلاغات - على فين؟" };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -138,9 +138,9 @@ export default async function ReportsPage() {
       </div>
 
       <div className={s.statsRow}>
-        <Kpi icon={<ShieldAlert size={22} />} value={totals.all} label="إجمالي البلاغات" tone="#681F00" />
-        <Kpi icon={<Hourglass size={22} />} value={totals.open} label="مفتوح" tone="#d97706" />
-        <Kpi icon={<CheckCircle2 size={22} />} value={totals.actioned} label="تم اتخاذ إجراء" tone="#10b981" />
+        <Kpi icon={<ShieldAlert size={22} />} value={totals.all} label="إجمالي البلاغات" tone="#0F5D7A" />
+        <Kpi icon={<Hourglass size={22} />} value={totals.open} label="مفتوح" tone="#D9A441" />
+        <Kpi icon={<CheckCircle2 size={22} />} value={totals.actioned} label="تم اتخاذ إجراء" tone="#4E8B57" />
         <Kpi icon={<XCircle size={22} />} value={totals.dismissed} label="مرفوض" tone="#6b7280" />
       </div>
 

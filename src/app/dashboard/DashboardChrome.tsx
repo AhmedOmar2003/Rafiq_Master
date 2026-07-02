@@ -140,11 +140,12 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
         <div className={styles.sidebarHeader}>
           <Link href="/dashboard" className={styles.logo}>
             <div className={styles.logoIcon}>
-              <MapPin size={18} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand-logo.png" alt="" className={styles.logoImage} />
             </div>
             {!isCollapsed && (
               <div className={styles.logoTextGroup}>
-                <span className={styles.logoText}>رفيق</span>
+                <span className={styles.logoText}>على فين؟</span>
                 <span className={styles.logoSub}>لوحة التحكم</span>
               </div>
             )}
@@ -241,7 +242,7 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
             {/* Breadcrumb */}
             {currentPage && (
               <div className={styles.breadcrumb}>
-                <span className={styles.breadcrumbRoot}>رفيق</span>
+                <span className={styles.breadcrumbRoot}>على فين؟</span>
                 <ChevronLeft size={14} className={styles.breadcrumbSep} />
                 <span className={styles.breadcrumbCurrent}>
                   <currentPage.icon size={15} style={{ display: "inline-block", verticalAlign: "middle", marginBottom: "2px" }} /> {currentPage.name}
@@ -303,7 +304,7 @@ export default function DashboardChrome({ children, role, displayName }: Props) 
               <h3 id="logout-dialog-title" className={styles.modalTitle}>تسجيل الخروج</h3>
             </div>
             <p className={styles.modalBody}>
-              هل أنت متأكد أنك تريد تسجيل الخروج من لوحة تحكم رفيق؟
+              هل أنت متأكد إنك عايز تسجّل خروج من لوحة تحكم على فين؟
             </p>
             {logoutError && (
               <p className={styles.modalError} role="alert" aria-live="assertive">

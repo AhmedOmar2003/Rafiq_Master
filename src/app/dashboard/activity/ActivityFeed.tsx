@@ -26,21 +26,21 @@ export type ActivityRow = {
 };
 
 const KIND_CFG: Record<ActivityKind, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  approve:      { label: "اعتماد",      color: "#16a34a", bg: "rgba(22,163,74,0.10)",  icon: CheckCircle2 },
-  reject:       { label: "رفض",         color: "#dc2626", bg: "rgba(220,38,38,0.10)",  icon: XCircle },
+  approve:      { label: "اعتماد",      color: "#4E8B57", bg: "rgba(78,139,87,0.14)",  icon: CheckCircle2 },
+  reject:       { label: "رفض",         color: "#B85C38", bg: "rgba(184,92,56,0.14)",  icon: XCircle },
   suspend:      { label: "تعليق",       color: "#6b7280", bg: "rgba(107,114,128,0.10)",icon: Trash2 },
-  pending:      { label: "إعادة مراجعة",color: "#d97706", bg: "rgba(217,119,6,0.10)",  icon: Hourglass },
-  subscription: { label: "اشتراك",      color: "#10b981", bg: "rgba(16,185,129,0.10)", icon: CreditCard },
-  signup:       { label: "تسجيل",       color: "#2563eb", bg: "rgba(37,99,235,0.10)",  icon: UserPlus },
-  appeal:       { label: "طعن",         color: "#7c3aed", bg: "rgba(124,58,237,0.10)", icon: Gavel },
-  review:       { label: "تقييم",       color: "#f59e0b", bg: "rgba(245,158,11,0.12)", icon: Star },
+  pending:      { label: "إعادة مراجعة",color: "#7A5400", bg: "rgba(217,164,65,0.18)",  icon: Hourglass },
+  subscription: { label: "اشتراك",      color: "#4E8B57", bg: "rgba(78,139,87,0.14)", icon: CreditCard },
+  signup:       { label: "تسجيل",       color: "#0F5D7A", bg: "rgba(15,93,122,0.12)",  icon: UserPlus },
+  appeal:       { label: "طعن",         color: "#1FA5A3", bg: "rgba(31,165,163,0.12)", icon: Gavel },
+  review:       { label: "تقييم",       color: "#7A5400", bg: "rgba(217,164,65,0.18)", icon: Star },
   report:       { label: "بلاغ",        color: "#ef4444", bg: "rgba(239,68,68,0.12)",  icon: Siren },
-  campaign:     { label: "إعلان",       color: "#681F00", bg: "rgba(104,31,0,0.10)",   icon: Megaphone },
+  campaign:     { label: "إعلان",       color: "#0F5D7A", bg: "rgba(15,93,122,0.12)",   icon: Megaphone },
   place_open:   { label: "مشاهدة",      color: "#0f766e", bg: "rgba(15,118,110,0.12)", icon: ActivityIcon },
-  favorite:     { label: "مفضلة",       color: "#db2777", bg: "rgba(219,39,119,0.12)", icon: Heart },
-  map_open:     { label: "خريطة",       color: "#0284c7", bg: "rgba(2,132,199,0.12)",  icon: Navigation },
+  favorite:     { label: "مفضلة",       color: "#B85C38", bg: "rgba(184,92,56,0.14)", icon: Heart },
+  map_open:     { label: "خريطة",       color: "#1FA5A3", bg: "rgba(31,165,163,0.12)",  icon: Navigation },
   campaign_click:{ label: "نقرة إعلان", color: "#9333ea", bg: "rgba(147,51,234,0.12)", icon: MousePointerClick },
-  campaign_impression:{ label: "ظهور إعلان", color: "#7c3aed", bg: "rgba(124,58,237,0.12)", icon: Megaphone },
+  campaign_impression:{ label: "ظهور إعلان", color: "#1FA5A3", bg: "rgba(31,165,163,0.12)", icon: Megaphone },
   admin_action: { label: "إجراء إداري", color: "#4b5563", bg: "rgba(75,85,99,0.12)", icon: ActivityIcon },
 };
 

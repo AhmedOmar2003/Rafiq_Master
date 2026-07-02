@@ -316,7 +316,7 @@ function AppealCard({
                   marginBottom: 4,
                   fontSize: "0.78rem",
                   fontWeight: 700,
-                  color: "#dc2626",
+                  color: "var(--color-error)",
                 }}
               >
                 <AlertCircle size={14} />
@@ -489,21 +489,21 @@ function AppealCard({
             <ActionButton
               icon={<Hourglass size={15} />}
               label="قيد المراجعة"
-              color="#2563eb"
+              color="#0F5D7A"
               disabled={pending || appeal.status === "reviewing"}
               onClick={() => onSetStatus("reviewing")}
             />
             <ActionButton
               icon={<CheckCircle2 size={15} />}
               label="تم الحل"
-              color="#10b981"
+              color="#4E8B57"
               disabled={pending || appeal.status === "resolved"}
               onClick={() => onSetStatus("resolved")}
             />
             <ActionButton
               icon={<XCircle size={15} />}
               label="رفض الطعن"
-              color="#dc2626"
+              color="#B85C38"
               disabled={pending || appeal.status === "rejected"}
               onClick={() => onSetStatus("rejected")}
             />

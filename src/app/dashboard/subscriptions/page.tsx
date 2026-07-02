@@ -6,7 +6,7 @@ import SubscriptionsFilters, {
 } from "./SubscriptionsFilters";
 import { requireSuperAdmin } from "@/lib/auth/role";
 
-export const metadata = { title: "الاشتراكات - رفيق" };
+export const metadata = { title: "الاشتراكات - على فين؟" };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

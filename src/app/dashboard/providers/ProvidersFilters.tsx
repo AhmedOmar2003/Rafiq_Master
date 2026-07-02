@@ -245,8 +245,8 @@ export default function ProvidersFilters({
                       <div
                         className={s.avatar}
                         style={{
-                          background: "rgba(104,31,0,0.10)",
-                          color: "#681F00",
+                          background: "rgba(15,93,122,0.12)",
+                          color: "#0F5D7A",
                         }}
                       >
                         {p.businessName.slice(0, 1).toUpperCase()}
@@ -277,7 +277,7 @@ export default function ProvidersFilters({
                       <div
                         style={{
                           fontSize: "0.72rem",
-                          color: "#d97706",
+                          color: "var(--color-warning)",
                           marginTop: 4,
                         }}
                       >
@@ -324,7 +324,7 @@ export default function ProvidersFilters({
                           triggerClassName={s.clearAllBtn}
                           triggerStyle={{
                             borderColor: "rgba(220,38,38,0.24)",
-                            color: "#dc2626",
+                            color: "var(--color-error)",
                           }}
                         >
                           <Trash2 size={13} />

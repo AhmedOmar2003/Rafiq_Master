@@ -40,7 +40,7 @@ import GrowthChart from "./GrowthChart";
 import { listAllAuthUsers } from "@/lib/admin/users";
 
 export const metadata = {
-  title: "نظرة عامة - رفيق",
+  title: "نظرة عامة - على فين؟",
 };
 
 export const dynamic = "force-dynamic";
@@ -401,11 +401,11 @@ export default async function DashboardOverview({
     .slice(0, 5);
 
   const activityColors: Record<string, string> = {
-    طعام: "#f59e0b",
-    ترفيه: "#8b5cf6",
-    سياحي: "#10b981",
-    رياضة: "#3b82f6",
-    فاجئني: "#ec4899",
+    طعام: "#D9A441",
+    ترفيه: "#1FA5A3",
+    سياحي: "#4E8B57",
+    رياضة: "#0F5D7A",
+    فاجئني: "#B85C38",
   };
 
   const cityIcons: Record<string, React.ReactNode> = {
@@ -478,7 +478,7 @@ export default async function DashboardOverview({
           </div>
           <h1 className={styles.title}>نظرة عامة</h1>
           <p className={styles.subtitle}>
-            أهم اللي بيحصل في رفيق قدامك بسرعة ووضوح.
+            أهم اللي بيحصل في على فين؟ قدامك بسرعة ووضوح.
           </p>
         </div>
         <div className={styles.headerRight}>
@@ -508,8 +508,10 @@ export default async function DashboardOverview({
                     textDecoration: "none",
                     fontWeight: 800,
                     fontSize: "0.82rem",
-                    background: active ? "#681F00" : "rgba(104,31,0,0.08)",
-                    color: active ? "#fff" : "#681F00",
+                    background: active
+                      ? "var(--color-brand-primary)"
+                      : "var(--color-primary-alpha)",
+                    color: active ? "#fff" : "var(--color-brand-primary)",
                   }}
                 >
                   آخر {days} يوم
@@ -857,42 +859,42 @@ export default async function DashboardOverview({
           </div>
           <div className={styles.activityGrid}>
             <div className={styles.activityCard}>
-              <div className={styles.activityDot} style={{ background: "#681F00" }} />
+              <div className={styles.activityDot} style={{ background: "var(--color-brand-primary)" }} />
               <div className={styles.activityBody}>
                 <span className={styles.activityName}>فتح التفاصيل</span>
                 <span className={styles.activityCount}>{placeOpenCount ?? 0} مرة</span>
               </div>
-              <div className={styles.activityPercent} style={{ color: "#681F00" }}>
+              <div className={styles.activityPercent} style={{ color: "var(--color-brand-primary)" }}>
                 <Eye size={16} />
               </div>
             </div>
             <div className={styles.activityCard}>
-              <div className={styles.activityDot} style={{ background: "#db2777" }} />
+              <div className={styles.activityDot} style={{ background: "var(--color-brand-terracotta)" }} />
               <div className={styles.activityBody}>
                 <span className={styles.activityName}>إضافات المفضلة</span>
                 <span className={styles.activityCount}>{favoriteAddsCount ?? 0} مرة</span>
               </div>
-              <div className={styles.activityPercent} style={{ color: "#db2777" }}>
+              <div className={styles.activityPercent} style={{ color: "var(--color-brand-terracotta)" }}>
                 <Heart size={16} />
               </div>
             </div>
             <div className={styles.activityCard}>
-              <div className={styles.activityDot} style={{ background: "#0284c7" }} />
+              <div className={styles.activityDot} style={{ background: "var(--color-brand-secondary)" }} />
               <div className={styles.activityBody}>
                 <span className={styles.activityName}>فتح الخريطة</span>
                 <span className={styles.activityCount}>{mapOpenCount ?? 0} مرة</span>
               </div>
-              <div className={styles.activityPercent} style={{ color: "#0284c7" }}>
+              <div className={styles.activityPercent} style={{ color: "var(--color-brand-secondary)" }}>
                 <Navigation size={16} />
               </div>
             </div>
             <div className={styles.activityCard}>
-              <div className={styles.activityDot} style={{ background: "#16a34a" }} />
+              <div className={styles.activityDot} style={{ background: "var(--color-brand-green)" }} />
               <div className={styles.activityBody}>
                 <span className={styles.activityName}>الإعلانات النشطة</span>
                 <span className={styles.activityCount}>{activeCampaignsCount ?? 0} حملة</span>
               </div>
-              <div className={styles.activityPercent} style={{ color: "#16a34a" }}>
+              <div className={styles.activityPercent} style={{ color: "var(--color-brand-green)" }}>
                 <Megaphone size={16} />
               </div>
             </div>
@@ -915,7 +917,7 @@ export default async function DashboardOverview({
               topPlaces.map((place, i) => (
                 <div key={place.place_id} className={styles.topPlaceRow}>
                   <div className={styles.rankBadge}>
-                    {i === 0 ? <Trophy size={16} color="#f59e0b" /> : i === 1 ? <Medal size={16} color="#9ca3af" /> : i === 2 ? <Medal size={16} color="#b45309" /> : `#${i + 1}`}
+                    {i === 0 ? <Trophy size={16} color="#D9A441" /> : i === 1 ? <Medal size={16} color="#6B7280" /> : i === 2 ? <Medal size={16} color="#B85C38" /> : `#${i + 1}`}
                   </div>
                   <div className={styles.topPlaceInfo}>
                     <span className={styles.topPlaceName}>{place.place_name}</span>
@@ -980,7 +982,7 @@ export default async function DashboardOverview({
               <div className={styles.emptyState}>لا توجد بيانات</div>
             ) : (
               activityStats.map(([activity, count]) => {
-                const color = activityColors[activity] || "#681F00";
+                const color = activityColors[activity] || "#0F5D7A";
                 const percent =
                   totalPlaces > 0 ? Math.round((count / totalPlaces) * 100) : 0;
                 return (
@@ -1022,7 +1024,7 @@ export default async function DashboardOverview({
                   user.email?.split("@")[0] ||
                   "بدون اسم";
                 const avatarColors = [
-                  "#681F00", "#8b5cf6", "#10b981", "#f59e0b", "#3b82f6"
+                  "#0F5D7A", "#1FA5A3", "#D9A441", "#4E8B57", "#B85C38"
                 ];
                 const color = avatarColors[i % avatarColors.length];
 
@@ -1065,8 +1067,8 @@ export default async function DashboardOverview({
                   <div
                     className={styles.placeIcon}
                     style={{
-                      background: `${activityColors[place.activity_name] || "#681F00"}18`,
-                      color: activityColors[place.activity_name] || "#681F00",
+                      background: `${activityColors[place.activity_name] || "#0F5D7A"}18`,
+                      color: activityColors[place.activity_name] || "#0F5D7A",
                     }}
                   >
                     <MapPin size={16} />
@@ -1082,8 +1084,8 @@ export default async function DashboardOverview({
                   <div
                     className={styles.activityTag}
                     style={{
-                      background: `${activityColors[place.activity_name] || "#681F00"}18`,
-                      color: activityColors[place.activity_name] || "#681F00",
+                      background: `${activityColors[place.activity_name] || "#0F5D7A"}18`,
+                      color: activityColors[place.activity_name] || "#0F5D7A",
                     }}
                   >
                     {place.activity_name}

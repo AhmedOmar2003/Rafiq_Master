@@ -327,13 +327,13 @@ export default function ReportsList({
                     </div>
 
                     <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-                      <Btn icon={<Hourglass size={15} />} label="تمت المراجعة" color="#2563eb"
+                      <Btn icon={<Hourglass size={15} />} label="تمت المراجعة" color="#0F5D7A"
                         disabled={isPending || r.status === "reviewed"}
                         onClick={() => update(r.id, "reviewed", noteDraft[r.id] ?? r.resolutionNote ?? "")} />
-                      <Btn icon={<CheckCircle2 size={15} />} label="تم اتخاذ إجراء" color="#16a34a"
+                      <Btn icon={<CheckCircle2 size={15} />} label="تم اتخاذ إجراء" color="#4E8B57"
                         disabled={isPending || r.status === "actioned"}
                         onClick={() => update(r.id, "actioned", noteDraft[r.id] ?? r.resolutionNote ?? "")} />
-                      <Btn icon={<XCircle size={15} />} label="رفض البلاغ" color="#dc2626"
+                      <Btn icon={<XCircle size={15} />} label="رفض البلاغ" color="#B85C38"
                         disabled={isPending || r.status === "dismissed"}
                         onClick={() => update(r.id, "dismissed", noteDraft[r.id] ?? r.resolutionNote ?? "")} />
                     </div>

@@ -31,8 +31,8 @@ function Stars({ rating }: { rating: number }) {
         <Star
           key={i}
           size={14}
-          fill={i <= rating ? "#f59e0b" : "transparent"}
-          stroke={i <= rating ? "#f59e0b" : "#d1d5db"}
+          fill={i <= rating ? "#D9A441" : "transparent"}
+          stroke={i <= rating ? "#D9A441" : "#D9E1E5"}
         />
       ))}
       <span className={ls.ratingNum}>{rating}</span>

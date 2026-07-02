@@ -23,8 +23,14 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand-logo.png"
+          alt="على فين؟"
+          className={styles.logo}
+        />
         <h1 className={styles.title}>تسجيل الدخول</h1>
-        <p className={styles.subtitle}>لوحة تحكم رفيق الإدارية</p>
+        <p className={styles.subtitle}>لوحة تحكم على فين؟</p>
 
         {state?.error && <div className={styles.error}>{state.error}</div>}
 

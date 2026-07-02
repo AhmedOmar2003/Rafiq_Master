@@ -52,7 +52,7 @@ export default function GrowthChart({ series }: { series: Row[] }) {
               width: 36,
               height: 36,
               borderRadius: 10,
-              background: "rgba(104,31,0,0.10)",
+              background: "var(--color-primary-alpha)",
               color: "var(--color-primary)",
               display: "flex",
               alignItems: "center",
@@ -84,8 +84,8 @@ export default function GrowthChart({ series }: { series: Row[] }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: "1.25rem" }}>
-          <Stat label="مستخدمون جدد" value={totalUsers} color="#681F00" />
-          <Stat label="أماكن جديدة" value={totalPlaces} color="#10b981" />
+          <Stat label="مستخدمون جدد" value={totalUsers} color="#0F5D7A" />
+          <Stat label="أماكن جديدة" value={totalPlaces} color="#1FA5A3" />
         </div>
       </div>
 
@@ -93,12 +93,12 @@ export default function GrowthChart({ series }: { series: Row[] }) {
         <AreaChart data={series} margin={{ top: 5, right: 12, left: -16, bottom: 0 }}>
           <defs>
             <linearGradient id="usersFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#681F00" stopOpacity={0.32} />
-              <stop offset="100%" stopColor="#681F00" stopOpacity={0} />
+              <stop offset="0%" stopColor="#0F5D7A" stopOpacity={0.32} />
+              <stop offset="100%" stopColor="#0F5D7A" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="placesFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity={0.28} />
-              <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+              <stop offset="0%" stopColor="#1FA5A3" stopOpacity={0.28} />
+              <stop offset="100%" stopColor="#1FA5A3" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -138,14 +138,14 @@ export default function GrowthChart({ series }: { series: Row[] }) {
           <Area
             type="monotone"
             dataKey="users"
-            stroke="#681F00"
+            stroke="#0F5D7A"
             strokeWidth={2}
             fill="url(#usersFill)"
           />
           <Area
             type="monotone"
             dataKey="places"
-            stroke="#10b981"
+            stroke="#1FA5A3"
             strokeWidth={2}
             fill="url(#placesFill)"
           />

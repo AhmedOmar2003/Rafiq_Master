@@ -11,7 +11,7 @@ export default function DashboardLoading() {
             background: "var(--color-primary-alpha)", 
             display: "flex", alignItems: "center", justifyContent: "center", 
             color: "var(--color-primary)",
-            boxShadow: "inset 0 0 0 1.5px rgba(104, 31, 0, 0.08)",
+            boxShadow: "inset 0 0 0 1.5px var(--color-primary-alpha)",
             animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
           }}
         >

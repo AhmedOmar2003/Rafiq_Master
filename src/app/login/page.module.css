@@ -3,7 +3,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-background);
+  background:
+    radial-gradient(circle at 20% 15%, rgba(31, 165, 163, 0.14), transparent 32%),
+    var(--color-background);
   padding: var(--space-md);
 }
 
@@ -15,6 +17,15 @@
   width: 100%;
   max-width: 420px;
   text-align: center;
+  border: 1px solid var(--color-border);
+}
+
+.logo {
+  display: block;
+  width: 150px;
+  height: 96px;
+  object-fit: contain;
+  margin: 0 auto var(--space-md);
 }
 
 .title {
