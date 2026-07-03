@@ -68,7 +68,7 @@
 
 .success {
   color: var(--color-success);
-  background-color: rgba(78, 139, 87, 0.12);
+  background-color: var(--color-success-bg);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
   font-size: 0.9rem;

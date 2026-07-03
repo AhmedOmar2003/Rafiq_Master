@@ -33,7 +33,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--color-overlay-soft);
   backdrop-filter: blur(4px);
   z-index: 40;
   border: 0;
@@ -455,7 +455,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-mid, #76361C));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-mid));
   color: var(--color-on-primary);
   display: flex;
   align-items: center;
@@ -496,7 +496,7 @@
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-overlay);
   backdrop-filter: blur(4px);
   z-index: 9999;
   display: flex;
@@ -517,7 +517,7 @@
   padding: 2rem;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -565,10 +565,10 @@
 .modalError {
   margin: 0;
   padding: 0.75rem 1rem;
-  border: 1px solid rgba(220, 38, 38, 0.22);
+  border: 1px solid var(--color-error);
   border-radius: var(--radius-md);
   background: var(--color-danger-alpha);
-  color: #fff;
+  color: var(--color-error);
   font-size: 0.9rem;
   font-weight: 700;
   line-height: 1.6;

@@ -696,19 +696,19 @@ export default async function ActivityPage({
       </div>
 
       <div className={s.statsRow}>
-        <Kpi icon={<Activity size={22} />} value={periodEvents.length} label={rangeDays === 1 ? "نشاط آخر ٢٤ ساعة" : `نشاط آخر ${rangeDays} يوم`} tone="#0F5D7A" />
-        <Kpi icon={<UserPlus size={22} />} value={periodEvents.filter((e) => e.kind === "signup").length} label="تسجيلات جديدة" tone="#0F5D7A" />
-        <Kpi icon={<CreditCard size={22} />} value={periodEvents.filter((e) => e.kind === "subscription").length} label="اشتراكات جديدة" tone="#4E8B57" />
-        <Kpi icon={<CheckCircle2 size={22} />} value={periodEvents.filter((e) => e.kind === "approve").length} label="عمليات اعتماد" tone="#4E8B57" />
-        <Kpi icon={<XCircle size={22} />} value={periodEvents.filter((e) => e.kind === "reject").length} label="عمليات رفض" tone="#B85C38" />
-        <Kpi icon={<Gavel size={22} />} value={periodEvents.filter((e) => e.kind === "appeal").length} label="طعون جديدة" tone="#D9A441" />
-        <Kpi icon={<Star size={22} />} value={periodEvents.filter((e) => e.kind === "review").length} label="تقييمات جديدة" tone="#D9A441" />
-        <Kpi icon={<Siren size={22} />} value={periodEvents.filter((e) => e.kind === "report").length} label="بلاغات جديدة" tone="#B85C38" />
-        <Kpi icon={<Megaphone size={22} />} value={periodEvents.filter((e) => e.kind === "campaign").length} label="حملات أو طلبات إعلان" tone="#1FA5A3" />
-        <Kpi icon={<Heart size={22} />} value={periodEvents.filter((e) => e.kind === "favorite").length} label="تفاعلات المفضلة" tone="#B85C38" />
-        <Kpi icon={<Navigation size={22} />} value={periodEvents.filter((e) => e.kind === "map_open").length} label="فتح الخريطة" tone="#1FA5A3" />
-        <Kpi icon={<MousePointerClick size={22} />} value={periodEvents.filter((e) => e.kind === "campaign_click").length} label="نقرات الإعلانات" tone="#9333ea" />
-        <Kpi icon={<Activity size={22} />} value={periodEvents.filter((e) => e.kind === "admin_action").length} label="إجراءات الأدمن" tone="#4b5563" />
+        <Kpi icon={<Activity size={22} />} value={periodEvents.length} label={rangeDays === 1 ? "نشاط آخر ٢٤ ساعة" : `نشاط آخر ${rangeDays} يوم`} tone="var(--color-primary)" />
+        <Kpi icon={<UserPlus size={22} />} value={periodEvents.filter((e) => e.kind === "signup").length} label="تسجيلات جديدة" tone="var(--color-info)" />
+        <Kpi icon={<CreditCard size={22} />} value={periodEvents.filter((e) => e.kind === "subscription").length} label="اشتراكات جديدة" tone="var(--color-success)" />
+        <Kpi icon={<CheckCircle2 size={22} />} value={periodEvents.filter((e) => e.kind === "approve").length} label="عمليات اعتماد" tone="var(--color-success)" />
+        <Kpi icon={<XCircle size={22} />} value={periodEvents.filter((e) => e.kind === "reject").length} label="عمليات رفض" tone="var(--color-error)" />
+        <Kpi icon={<Gavel size={22} />} value={periodEvents.filter((e) => e.kind === "appeal").length} label="طعون جديدة" tone="var(--color-warning)" />
+        <Kpi icon={<Star size={22} />} value={periodEvents.filter((e) => e.kind === "review").length} label="تقييمات جديدة" tone="var(--color-warning)" />
+        <Kpi icon={<Siren size={22} />} value={periodEvents.filter((e) => e.kind === "report").length} label="بلاغات جديدة" tone="var(--color-error)" />
+        <Kpi icon={<Megaphone size={22} />} value={periodEvents.filter((e) => e.kind === "campaign").length} label="حملات أو طلبات إعلان" tone="var(--color-secondary)" />
+        <Kpi icon={<Heart size={22} />} value={periodEvents.filter((e) => e.kind === "favorite").length} label="تفاعلات المفضلة" tone="var(--color-error)" />
+        <Kpi icon={<Navigation size={22} />} value={periodEvents.filter((e) => e.kind === "map_open").length} label="فتح الخريطة" tone="var(--color-secondary)" />
+        <Kpi icon={<MousePointerClick size={22} />} value={periodEvents.filter((e) => e.kind === "campaign_click").length} label="نقرات الإعلانات" tone="var(--color-primary)" />
+        <Kpi icon={<Activity size={22} />} value={periodEvents.filter((e) => e.kind === "admin_action").length} label="إجراءات الأدمن" tone="var(--color-text-secondary)" />
       </div>
 
       <ActivityFeed events={periodEvents} />

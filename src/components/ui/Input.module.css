@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 6px;
   width: 100%;
-  font-family: var(--font-cairo), sans-serif;
+  font-family: var(--font-ui);
 }
 
 .label {

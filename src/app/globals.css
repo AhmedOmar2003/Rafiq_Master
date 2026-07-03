@@ -1,8 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap");
 
 :root {
   /* "على فين؟" design tokens. UI code should use semantic roles below. */
-  --font-cairo: "Cairo";
+  --font-ui: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --brand-primary: #0F5D7A;
   --brand-secondary: #1FA5A3;
   --brand-accent: #D9A441;
@@ -52,6 +52,8 @@
   --color-border: var(--neutral-border);
   --color-border-hover: #C2CDD2;
   --color-border-focus: var(--color-brand-secondary);
+  --color-overlay: rgba(11, 17, 23, 0.60);
+  --color-overlay-soft: rgba(11, 17, 23, 0.36);
 
   /* State roles */
   --color-state-success: #3F7448;
@@ -75,6 +77,7 @@
   --radius-pill: 999px;
 
   --space-xs: 4px;
+  --space-2xs: 2px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
@@ -88,8 +91,11 @@
   --shadow-dropdown: var(--shadow-md);
   --focus-ring: 0 0 0 3px rgba(31, 165, 163, 0.35);
 
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-fast: 120ms;
+  --motion-normal: 180ms;
+  --motion-slow: 240ms;
+  --transition-fast: var(--motion-fast) cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: var(--motion-normal) cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Compatibility aliases. Values all point to the new semantic system. */
   --color-white:           #FFFFFF;
@@ -111,7 +117,7 @@
 
 html {
   height: 100%;
-  font-family: var(--font-cairo), "Cairo", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui);
 }
 
 html,
@@ -126,7 +132,7 @@ body {
   flex-direction: column;
   background-color: var(--color-background);
   color: var(--color-text-primary);
-  font-family: var(--font-cairo), "Cairo", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
@@ -162,7 +168,8 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: none;
+  outline: 2px solid var(--color-brand-secondary);
+  outline-offset: 3px;
   box-shadow: var(--focus-ring);
 }
 
@@ -198,3 +205,14 @@ input, textarea, select {
 .radius-md { border-radius: var(--radius-md); }
 .radius-lg { border-radius: var(--radius-lg); }
 .shadow-card { box-shadow: var(--shadow-card); }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}

@@ -5,7 +5,7 @@
   font-weight: 500;
   transition: all var(--transition-fast);
   outline: none;
-  font-family: var(--font-cairo), sans-serif;
+  font-family: var(--font-ui);
 }
 
 .button:disabled {
@@ -31,7 +31,8 @@
   border: 1px solid var(--color-secondary);
 }
 .secondary:hover:not(:disabled) {
-  background-color: rgba(31, 165, 163, 0.18);
+  background-color: var(--color-secondary-alpha);
+  filter: saturate(1.2);
 }
 
 .outline {
@@ -54,7 +55,7 @@
 
 .danger {
   background-color: var(--color-error);
-  color: white;
+  color: var(--color-on-primary);
 }
 .danger:hover:not(:disabled) {
   background-color: var(--color-danger-hover);
@@ -63,7 +64,7 @@
 /* Sizes */
 .sm {
   padding: 0 var(--space-md);
-  height: 36px;
+  min-height: 44px;
   font-size: 14px;
   border-radius: var(--radius-sm);
 }

@@ -138,10 +138,10 @@ export default async function ReportsPage() {
       </div>
 
       <div className={s.statsRow}>
-        <Kpi icon={<ShieldAlert size={22} />} value={totals.all} label="إجمالي البلاغات" tone="#0F5D7A" />
-        <Kpi icon={<Hourglass size={22} />} value={totals.open} label="مفتوح" tone="#D9A441" />
-        <Kpi icon={<CheckCircle2 size={22} />} value={totals.actioned} label="تم اتخاذ إجراء" tone="#4E8B57" />
-        <Kpi icon={<XCircle size={22} />} value={totals.dismissed} label="مرفوض" tone="#6b7280" />
+        <Kpi icon={<ShieldAlert size={22} />} value={totals.all} label="إجمالي البلاغات" tone="var(--color-primary)" />
+        <Kpi icon={<Hourglass size={22} />} value={totals.open} label="مفتوح" tone="var(--color-warning)" />
+        <Kpi icon={<CheckCircle2 size={22} />} value={totals.actioned} label="تم اتخاذ إجراء" tone="var(--color-success)" />
+        <Kpi icon={<XCircle size={22} />} value={totals.dismissed} label="مرفوض" tone="var(--color-text-tertiary)" />
       </div>
 
       <ReportsList reports={reports} setStatusAction={setReportStatus} />
